@@ -1,0 +1,691 @@
+@import "./workspace.css";
+
+@layer components {
+  /* ── Page ─────────────────────────────────────── */
+  .user-scripts-page {
+    background:
+      radial-gradient(ellipse at top left, rgba(138, 180, 248, 0.1), transparent 40rem),
+      radial-gradient(ellipse at bottom right, rgba(16, 185, 129, 0.08), transparent 36rem),
+      #202124;
+  }
+
+  /* ── Main layout (single column) ──────────────── */
+  .user-scripts-main {
+    @apply flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto px-12 pb-10;
+  }
+
+  /* ── Empty state ──────────────────────────────── */
+  .user-scripts-empty {
+    @apply flex min-h-[260px] flex-1 flex-col items-center justify-center px-12 text-center text-[#9aa0a6];
+  }
+
+  .user-scripts-empty h2 {
+    @apply m-0 text-[16px] font-medium text-[#e8eaed];
+  }
+
+  .user-scripts-empty p {
+    @apply m-0 mt-2 max-w-[320px] text-[13px] leading-[1.6];
+  }
+
+  /* ── Domain list ──────────────────────────────── */
+  .us-domain-list {
+    @apply flex flex-col gap-2;
+  }
+
+  .us-domain-item {
+    @apply flex items-center gap-3 rounded-[14px] border bg-transparent px-4 py-3 text-left cursor-pointer transition-all duration-200;
+    border-color: rgba(95, 99, 104, 0.5);
+    background: rgba(41, 42, 45, 0.85);
+  }
+
+  .us-domain-item:hover {
+    border-color: rgba(138, 180, 248, 0.4);
+    background: rgba(138, 180, 248, 0.06);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  }
+
+  .us-domain-icon {
+    @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-full;
+    background: rgba(138, 180, 248, 0.12);
+    color: #8ab4f8;
+  }
+
+  .us-domain-info {
+    @apply flex min-w-0 flex-1 flex-col gap-0.5;
+  }
+
+  .us-domain-name {
+    @apply truncate text-[14px] font-medium text-[#e8eaed];
+  }
+
+  .us-domain-count {
+    @apply text-[12px] text-[#9aa0a6];
+  }
+
+  .us-domain-chevron {
+    @apply shrink-0 text-[#9aa0a6] transition-transform;
+  }
+
+  .us-domain-item:hover .us-domain-chevron {
+    color: #8ab4f8;
+    transform: translateX(2px);
+  }
+
+  /* ── Card (shared) ─────────────────────────────── */
+  .us-card-name {
+    @apply m-0 truncate text-[14px] font-medium text-[#e8eaed];
+  }
+
+  .us-card-desc {
+    @apply m-0 line-clamp-2 text-[12px] leading-[1.5] text-[#9aa0a6];
+  }
+
+  .us-card-btn {
+    @apply inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent text-[#8ab4f8] transition-colors;
+  }
+
+  .us-card-btn:hover {
+    background: rgba(138, 180, 248, 0.14);
+  }
+
+  .us-card-btn.danger {
+    @apply text-rose-300;
+  }
+
+  .us-card-btn.danger:hover {
+    background: rgba(251, 113, 133, 0.14);
+  }
+
+  .us-card-btn:disabled {
+    @apply cursor-not-allowed opacity-40;
+  }
+
+  /* ── Domain dialog script list ─────────────────── */
+  .us-domain-dialog {
+    max-width: 560px;
+  }
+
+  .us-domain-script-list {
+    @apply flex flex-col gap-2;
+  }
+
+  .us-domain-script-item {
+    @apply flex flex-col overflow-hidden rounded-[12px] border transition-colors;
+    border-color: rgba(95, 99, 104, 0.5);
+    background: rgba(41, 42, 45, 0.75);
+  }
+
+  .us-domain-script-item:hover {
+    border-color: rgba(138, 180, 248, 0.35);
+  }
+
+  .us-domain-script-main {
+    @apply flex flex-col gap-1.5 border-0 bg-transparent px-4 py-3 text-left cursor-pointer;
+  }
+
+  .us-script-name-row {
+    @apply flex items-center gap-2;
+  }
+
+  .us-domain-script-actions {
+    @apply flex items-center gap-1 border-t px-3 py-1.5;
+    border-color: rgba(95, 99, 104, 0.35);
+  }
+
+  /* ── Badge ────────────────────────────────────── */
+  .us-badge {
+    @apply shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em];
+  }
+
+  .us-badge.enabled {
+    @apply text-emerald-300;
+    background: rgba(16, 185, 129, 0.16);
+  }
+
+  .us-badge.disabled {
+    @apply text-[#9aa0a6];
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  /* ── Action button (header level) ─────────────── */
+  .user-script-action,
+  .us-action-btn {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 border bg-transparent text-[#8ab4f8] transition-colors;
+    border-color: rgba(95, 99, 104, 0.8);
+  }
+
+  .user-script-action {
+    @apply h-9 rounded-full px-3 text-[13px];
+  }
+
+  .us-action-btn {
+    @apply h-8 rounded-full px-3 text-[12px];
+  }
+
+  .user-script-action.primary,
+  .us-action-btn.primary {
+    border-color: rgba(138, 180, 248, 0.34);
+    background: rgba(138, 180, 248, 0.1);
+    color: #e8eaed;
+  }
+
+  .user-script-action.primary:hover,
+  .us-action-btn.primary:hover {
+    background: rgba(138, 180, 248, 0.18);
+  }
+
+  .us-action-btn:hover {
+    background: rgba(138, 180, 248, 0.12);
+  }
+
+  .us-action-btn:disabled {
+    @apply cursor-not-allowed opacity-40;
+  }
+
+  /* ── Dialog backdrop ──────────────────────────── */
+  .us-dialog-backdrop {
+    @apply fixed inset-0 z-[200] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm;
+    animation: us-fade-in 0.18s ease-out;
+  }
+
+  @keyframes us-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .us-dialog {
+    @apply flex w-full max-w-[720px] flex-col overflow-hidden rounded-[20px] border shadow-2xl;
+    border-color: rgba(95, 99, 104, 0.55);
+    background: rgba(32, 33, 36, 0.96);
+    backdrop-filter: blur(24px);
+    max-height: 88vh;
+    animation: us-slide-up 0.22s ease-out;
+  }
+
+  @keyframes us-slide-up {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ── Dialog header ────────────────────────────── */
+  .us-dialog-header {
+    @apply flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4;
+    border-color: rgba(95, 99, 104, 0.45);
+  }
+
+  .us-dialog-header-info {
+    @apply flex min-w-0 items-center gap-3;
+  }
+
+  .us-dialog-title {
+    @apply m-0 truncate text-[16px] font-semibold text-[#e8eaed];
+  }
+
+  .us-dialog-header-actions {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  /* ── Dialog buttons ───────────────────────────── */
+  .us-dialog-btn {
+    @apply inline-flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-full border px-3 text-[12px] font-medium transition-colors;
+    border-color: rgba(95, 99, 104, 0.75);
+    background: transparent;
+    color: #8ab4f8;
+  }
+
+  .us-dialog-btn:hover {
+    background: rgba(138, 180, 248, 0.12);
+  }
+
+  .us-dialog-btn.primary {
+    border-color: rgba(138, 180, 248, 0.34);
+    background: rgba(138, 180, 248, 0.1);
+    color: #e8eaed;
+  }
+
+  .us-dialog-btn.primary:hover {
+    background: rgba(138, 180, 248, 0.2);
+  }
+
+  .us-dialog-btn.danger {
+    @apply text-rose-300;
+    border-color: rgba(251, 113, 133, 0.36);
+    background: rgba(251, 113, 133, 0.06);
+  }
+
+  .us-dialog-btn.danger:hover {
+    background: rgba(251, 113, 133, 0.14);
+  }
+
+  .us-dialog-btn.ghost {
+    @apply border-0 text-[#9aa0a6];
+  }
+
+  .us-dialog-btn.ghost:hover {
+    @apply text-[#e8eaed];
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .us-dialog-btn:disabled {
+    @apply cursor-not-allowed opacity-40;
+  }
+
+  /* ── Dialog status ────────────────────────────── */
+  .us-dialog-status {
+    @apply px-5 py-0;
+  }
+
+  /* ── Dialog body (scrollable) ─────────────────── */
+  .us-dialog-body {
+    @apply min-h-0 flex-1 overflow-y-auto px-5 py-4;
+  }
+
+  /* ── View mode ────────────────────────────────── */
+  .us-view {
+    @apply flex flex-col gap-5;
+  }
+
+  .us-view-desc {
+    @apply m-0 text-[13px] leading-[1.6] text-[#bdc1c6];
+  }
+
+  .us-view-section {
+    @apply flex flex-col gap-2;
+  }
+
+  .us-view-section h4 {
+    @apply m-0 text-[12px] font-semibold uppercase tracking-wide text-[#9aa0a6];
+  }
+
+  .us-view-patterns {
+    @apply flex flex-wrap gap-1.5;
+  }
+
+  .us-view-patterns code {
+    @apply rounded-[8px] px-2 py-1 text-[12px] text-[#bdc1c6];
+    background: rgba(255, 255, 255, 0.055);
+    font-family: "SFMono-Regular", ui-monospace, monospace;
+  }
+
+  .us-view-code {
+    @apply overflow-hidden rounded-[12px] border;
+    border-color: rgba(95, 99, 104, 0.6);
+    background: rgba(32, 33, 36, 0.92);
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .us-view-code pre {
+    @apply m-0 p-3 text-[12px] leading-[1.55] text-[#bdc1c6];
+    font-family: "SFMono-Regular", ui-monospace, monospace;
+  }
+
+  .us-view-runtime {
+    @apply grid gap-3 rounded-[12px] border p-3;
+    border-color: rgba(95, 99, 104, 0.45);
+    background: rgba(255, 255, 255, 0.035);
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+
+  .us-view-runtime div {
+    @apply min-w-0;
+  }
+
+  .us-view-runtime span {
+    @apply block text-[11px] font-medium text-[#9aa0a6];
+  }
+
+  .us-view-runtime strong {
+    @apply mt-0.5 block truncate text-[12px] font-normal text-[#e8eaed];
+  }
+
+  .us-view-runtime .error strong {
+    @apply text-rose-300;
+  }
+
+  /* ── Edit mode ────────────────────────────────── */
+  .us-edit {
+    @apply flex flex-col gap-4;
+  }
+
+  .us-form-grid {
+    @apply grid gap-3 md:grid-cols-2;
+  }
+
+  .us-field {
+    @apply flex flex-col gap-1.5;
+  }
+
+  .us-field span {
+    @apply text-[12px] font-medium text-[#bdc1c6];
+  }
+
+  .us-field input,
+  .us-field textarea {
+    @apply w-full rounded-[10px] border px-3 py-2 text-[13px] text-[#e8eaed] outline-none transition-colors;
+    border-color: rgba(95, 99, 104, 0.8);
+    background: rgba(32, 33, 36, 0.92);
+  }
+
+  .us-field input:focus,
+  .us-field textarea:focus {
+    border-color: rgba(138, 180, 248, 0.6);
+    box-shadow: 0 0 0 3px rgba(138, 180, 248, 0.12);
+  }
+
+  .us-field input::placeholder,
+  .us-field textarea::placeholder {
+    color: #80868b;
+  }
+
+  .us-check {
+    @apply inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-[13px];
+    border-color: rgba(95, 99, 104, 0.65);
+    background: rgba(255, 255, 255, 0.035);
+    color: #bdc1c6;
+  }
+
+  .us-check input {
+    accent-color: #8ab4f8;
+  }
+
+  .us-pattern-area {
+    min-height: 80px;
+    resize: vertical;
+    font-family: "SFMono-Regular", ui-monospace, monospace;
+  }
+
+  /* ── Monaco editor ────────────────────────────── */
+  .user-script-monaco-shell {
+    @apply w-full overflow-hidden rounded-[10px] border;
+    border-color: rgba(95, 99, 104, 0.8);
+    background: rgba(32, 33, 36, 0.92);
+  }
+
+  .user-script-monaco-shell:focus-within {
+    border-color: rgba(138, 180, 248, 0.6);
+    box-shadow: 0 0 0 3px rgba(138, 180, 248, 0.12);
+  }
+
+  .user-script-monaco-shell .monaco-editor,
+  .user-script-monaco-shell .monaco-editor-background,
+  .user-script-monaco-shell .monaco-editor .inputarea.ime-input {
+    background: transparent;
+  }
+
+  /* ── Agent panel (inside edit dialog) ─────────── */
+  .us-agent-panel {
+    @apply rounded-[14px] border p-4;
+    border-color: rgba(138, 180, 248, 0.2);
+    background:
+      linear-gradient(135deg, rgba(138, 180, 248, 0.1), rgba(52, 211, 153, 0.06)),
+      rgba(255, 255, 255, 0.03);
+  }
+
+  .us-agent-heading {
+    @apply mb-3;
+  }
+
+  .us-agent-heading h3 {
+    @apply m-0 flex items-center gap-2 text-[14px] font-medium text-[#e8eaed];
+  }
+
+  .us-agent-heading p {
+    @apply m-0 mt-1 text-[12px] leading-[1.5] text-[#9aa0a6];
+  }
+
+  .us-agent-actions {
+    @apply mt-3 flex flex-wrap gap-2;
+  }
+
+  .us-agent-notes {
+    @apply m-0 mt-3 rounded-[10px] px-3 py-2 text-[12px] leading-[1.55] text-[#bdc1c6];
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .us-agent-notes strong {
+    @apply text-[#e8eaed];
+  }
+
+  /* ── Edit footer ──────────────────────────────── */
+  .us-edit-footer {
+    @apply flex items-center gap-4 border-t pt-4;
+    border-color: rgba(95, 99, 104, 0.4);
+  }
+
+  .us-edit-actions {
+    @apply ml-auto flex items-center gap-2;
+  }
+
+  /* ── Toggle switch ─────────────────────────────── */
+  .us-toggle {
+    @apply inline-flex cursor-pointer items-center gap-2;
+  }
+
+  .us-toggle input {
+    @apply sr-only;
+  }
+
+  .us-toggle-track {
+    @apply relative inline-flex h-[22px] w-[40px] shrink-0 items-center rounded-full transition-colors;
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .us-toggle input:checked + .us-toggle-track {
+    background: rgba(16, 185, 129, 0.55);
+  }
+
+  .us-toggle-thumb {
+    @apply block h-[16px] w-[16px] rounded-full bg-white shadow-sm transition-transform;
+    transform: translateX(3px);
+  }
+
+  .us-toggle input:checked + .us-toggle-track .us-toggle-thumb {
+    transform: translateX(21px);
+  }
+
+  .us-toggle-label {
+    @apply text-[12px] text-[#bdc1c6];
+  }
+
+  /* ── Light theme ──────────────────────────────── */
+  [data-theme="light"] .user-scripts-page {
+    background:
+      radial-gradient(ellipse at top left, rgba(26, 115, 232, 0.08), transparent 40rem),
+      radial-gradient(ellipse at bottom right, rgba(5, 150, 105, 0.06), transparent 36rem),
+      #f8fafd;
+  }
+
+  [data-theme="light"] .us-domain-item {
+    border-color: rgba(218, 220, 224, 0.9);
+    background: rgba(255, 255, 255, 0.88);
+  }
+
+  [data-theme="light"] .us-domain-item:hover {
+    border-color: rgba(26, 115, 232, 0.35);
+    background: rgba(26, 115, 232, 0.04);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  }
+
+  [data-theme="light"] .us-domain-icon {
+    background: rgba(26, 115, 232, 0.1);
+    color: #1a73e8;
+  }
+
+  [data-theme="light"] .us-domain-name,
+  [data-theme="light"] .us-card-name,
+  [data-theme="light"] .us-dialog-title,
+  [data-theme="light"] .us-view-desc,
+  [data-theme="light"] .us-field input,
+  [data-theme="light"] .us-field textarea,
+  [data-theme="light"] .us-view-runtime strong,
+  [data-theme="light"] .us-view-code pre,
+  [data-theme="light"] .user-scripts-empty h2 {
+    @apply text-[#202124];
+  }
+
+  [data-theme="light"] .us-domain-count,
+  [data-theme="light"] .us-domain-chevron,
+  [data-theme="light"] .us-card-desc,
+  [data-theme="light"] .us-view-section h4,
+  [data-theme="light"] .us-view-runtime span,
+  [data-theme="light"] .user-scripts-empty,
+  [data-theme="light"] .us-edit-hint,
+  [data-theme="light"] .us-agent-heading p {
+    @apply text-[#5f6368];
+  }
+
+  [data-theme="light"] .us-view-patterns code {
+    color: #5f6368;
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  [data-theme="light"] .us-domain-script-item {
+    border-color: rgba(218, 220, 224, 0.8);
+    background: rgba(255, 255, 255, 0.75);
+  }
+
+  [data-theme="light"] .us-domain-script-item:hover {
+    border-color: rgba(26, 115, 232, 0.3);
+  }
+
+  [data-theme="light"] .us-domain-script-actions {
+    border-color: rgba(218, 220, 224, 0.7);
+  }
+
+  [data-theme="light"] .us-card-btn {
+    @apply text-[#1a73e8];
+  }
+
+  [data-theme="light"] .us-card-btn:hover {
+    background: rgba(26, 115, 232, 0.1);
+  }
+
+  [data-theme="light"] .us-card-btn {
+    @apply text-[#1a73e8];
+  }
+
+  [data-theme="light"] .us-card-btn:hover {
+    background: rgba(26, 115, 232, 0.1);
+  }
+
+  [data-theme="light"] .us-dialog {
+    border-color: rgba(218, 220, 224, 0.9);
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.12);
+  }
+
+  [data-theme="light"] .us-dialog-header {
+    border-color: rgba(218, 220, 224, 0.8);
+  }
+
+  [data-theme="light"] .us-dialog-btn {
+    border-color: #dadce0;
+    color: #1a73e8;
+  }
+
+  [data-theme="light"] .us-dialog-btn:hover {
+    background: rgba(26, 115, 232, 0.08);
+  }
+
+  [data-theme="light"] .us-dialog-btn.primary {
+    border-color: rgba(26, 115, 232, 0.35);
+    background: rgba(26, 115, 232, 0.08);
+    color: #202124;
+  }
+
+  [data-theme="light"] .us-dialog-btn.ghost {
+    @apply text-[#5f6368];
+  }
+
+  [data-theme="light"] .us-dialog-btn.ghost:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: #202124;
+  }
+
+  [data-theme="light"] .us-view-code {
+    border-color: #dadce0;
+    background: rgba(255, 255, 255, 0.92);
+  }
+
+  [data-theme="light"] .us-view-runtime {
+    border-color: rgba(218, 220, 224, 0.8);
+    background: rgba(0, 0, 0, 0.025);
+  }
+
+  [data-theme="light"] .us-agent-panel {
+    border-color: rgba(26, 115, 232, 0.18);
+    background:
+      linear-gradient(135deg, rgba(26, 115, 232, 0.06), rgba(5, 150, 105, 0.04)),
+      rgba(255, 255, 255, 0.7);
+  }
+
+  [data-theme="light"] .us-agent-heading h3,
+  [data-theme="light"] .us-agent-notes strong,
+  [data-theme="light"] .us-field span,
+  [data-theme="light"] .us-check span {
+    @apply text-[#202124];
+  }
+
+  [data-theme="light"] .us-agent-notes {
+    @apply text-[#5f6368];
+    background: rgba(0, 0, 0, 0.03);
+  }
+
+  [data-theme="light"] .us-field input,
+  [data-theme="light"] .us-field textarea,
+  [data-theme="light"] .user-script-monaco-shell {
+    border-color: #dadce0;
+    background: rgba(255, 255, 255, 0.92);
+  }
+
+  [data-theme="light"] .us-check {
+    border-color: #dadce0;
+    background: rgba(0, 0, 0, 0.025);
+    color: #5f6368;
+  }
+
+  [data-theme="light"] .us-edit-footer {
+    border-color: rgba(218, 220, 224, 0.7);
+  }
+
+  [data-theme="light"] .us-toggle-track {
+    background: rgba(0, 0, 0, 0.15);
+  }
+
+  [data-theme="light"] .us-toggle input:checked + .us-toggle-track {
+    background: rgba(5, 150, 105, 0.5);
+  }
+
+  [data-theme="light"] .us-toggle-label {
+    @apply text-[#5f6368];
+  }
+
+  [data-theme="light"] .us-view-patterns code {
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  /* ── Responsive ───────────────────────────────── */
+  @media (max-width: 768px) {
+    .user-scripts-main {
+      @apply px-6;
+    }
+
+    .us-group-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .us-dialog {
+      max-width: 100%;
+      max-height: 95vh;
+    }
+
+    .us-dialog-header {
+      @apply flex-col items-start gap-2;
+    }
+
+    .us-form-grid {
+      @apply grid-cols-1;
+    }
+  }
+}

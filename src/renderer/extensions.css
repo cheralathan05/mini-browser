@@ -1,0 +1,211 @@
+@import "./workspace.css";
+
+@layer components {
+  .extensions-grid {
+    align-content: start;
+  }
+
+  .hero-actions {
+    @apply flex flex-wrap items-center justify-end gap-2;
+  }
+
+  .extension-hero-action {
+    @apply inline-flex h-9 items-center gap-2 rounded-full border border-[#5f6368] bg-transparent px-3 text-[13px] text-[#8ab4f8] transition-colors;
+  }
+
+  .extension-hero-action:hover {
+    background: rgba(138, 180, 248, 0.1);
+  }
+
+  .extension-hero-action:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  .extension-card {
+    height: auto;
+    min-height: 180px;
+  }
+
+  .extension-card-feature {
+    @apply sm:col-span-2;
+  }
+
+  .extension-card-fill {
+    @apply sm:col-span-2 md:col-span-3 lg:col-span-4 xl:col-span-5;
+  }
+
+  .extension-card-title-row {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  .extension-card-title-row h2 {
+    @apply m-0 text-[15px] font-medium text-[#e8eaed];
+  }
+
+  .extension-card-copy {
+    @apply m-0 mt-2 text-[12px] leading-[1.5] text-[#9aa0a6];
+  }
+
+  .extension-card-footer {
+    @apply mt-auto flex flex-col gap-2;
+  }
+
+  .extension-card-actions {
+    @apply flex items-center gap-2;
+  }
+
+  .extension-action-icon {
+    @apply inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#5f6368] bg-transparent p-0 text-[#8ab4f8] transition-colors;
+  }
+
+  .extension-action-icon:hover {
+    background: rgba(138, 180, 248, 0.1);
+  }
+
+  .extension-action-icon:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  .extension-action-delete {
+    @apply border-rose-400/30 text-rose-300;
+  }
+
+  .extension-action-delete:hover {
+    background: rgba(244, 143, 177, 0.1);
+  }
+
+  .extension-card-empty {
+    @apply items-center justify-center text-center;
+  }
+
+  .extension-card-empty h2 {
+    @apply m-0 mt-2 text-[16px] font-medium text-[#e8eaed];
+  }
+
+  .extension-card-empty p {
+    @apply m-0 mt-2 max-w-[560px] text-[12px] leading-[1.6] text-[#9aa0a6];
+  }
+
+  .extension-store-input {
+    @apply h-9 rounded-[10px] border border-[#5f6368] bg-[#202124] px-3 text-[14px] text-[#e8eaed] outline-none transition-colors;
+  }
+
+  .extension-store-input:focus {
+    border-color: rgba(138, 180, 248, 0.65);
+    box-shadow: 0 0 0 3px rgba(138, 180, 248, 0.14);
+  }
+
+  .extension-store-input::placeholder {
+    color: #9aa0a6;
+  }
+
+  .extension-install-stack {
+    @apply mt-3 flex flex-1 flex-col gap-3;
+  }
+
+  .extension-install-actions {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .extension-badge-source-store {
+    @apply text-[#8ab4f8];
+    background: rgba(138, 180, 248, 0.15);
+  }
+
+  .extension-badge-source-local {
+    @apply text-emerald-300;
+    background: rgba(16, 185, 129, 0.14);
+  }
+
+  .extension-badge-disabled {
+    color: #9aa0a6;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .extension-card-error {
+    @apply m-0 mt-2 text-[12px] leading-[1.5] text-rose-300;
+    max-height: 36px;
+    overflow: hidden;
+  }
+
+  [data-theme="light"] .extension-hero-action {
+    @apply border-[#dadce0] text-[#1a73e8];
+  }
+
+  [data-theme="light"] .extension-hero-action:hover {
+    background: rgba(26, 115, 232, 0.08);
+  }
+
+  [data-theme="light"] .extension-card-title-row h2,
+  [data-theme="light"] .extension-card-empty h2 {
+    @apply text-[#202124];
+  }
+
+  [data-theme="light"] .extension-card-copy,
+  [data-theme="light"] .extension-card-empty p {
+    @apply text-[#5f6368];
+  }
+
+  [data-theme="light"] .extension-store-input {
+    @apply border-[#dadce0] bg-white text-[#202124];
+  }
+
+  [data-theme="light"] .extension-store-input::placeholder {
+    color: #5f6368;
+  }
+
+  [data-theme="light"] .extension-store-input:focus {
+    border-color: rgba(26, 115, 232, 0.45);
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
+  }
+
+  [data-theme="light"] .extension-action-icon {
+    @apply border-[#dadce0] text-[#1a73e8];
+  }
+
+  [data-theme="light"] .extension-action-icon:hover {
+    background: rgba(26, 115, 232, 0.08);
+  }
+
+  [data-theme="light"] .extension-action-delete {
+    @apply border-rose-300 text-rose-600;
+  }
+
+  [data-theme="light"] .extension-action-delete:hover {
+    background: rgba(244, 63, 94, 0.08);
+  }
+
+  [data-theme="light"] .extension-badge-source-store {
+    @apply text-[#1a73e8];
+    background: rgba(26, 115, 232, 0.12);
+  }
+
+  [data-theme="light"] .extension-badge-source-local {
+    @apply text-emerald-700;
+    background: rgba(16, 185, 129, 0.12);
+  }
+
+  [data-theme="light"] .extension-badge-disabled {
+    @apply text-[#5f6368];
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  [data-theme="light"] .extension-card-error {
+    @apply text-rose-600;
+  }
+
+  @media (max-width: 1020px) {
+    .hero {
+      @apply flex-col items-start;
+    }
+
+    .hero-actions {
+      @apply mt-4 w-full justify-start;
+    }
+
+    .extension-card-feature,
+    .extension-card-fill {
+      grid-column: span 1 / span 1;
+    }
+  }
+}

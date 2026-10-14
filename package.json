@@ -1,0 +1,130 @@
+{
+  "name": "milo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Milo is an AI Native browser that turns tabs, context, automation, and local memory into one intelligent workspace.",
+  "main": "dist-electron/main.js",
+  "type": "module",
+  "scripts": {
+    "clean:dev": "powershell -ExecutionPolicy Bypass -File scripts/clean-dev.ps1",
+    "predev": "npm run clean:dev && npm run db:start",
+    "dev": "concurrently -k \"npm:dev:backend\" \"npm:dev:renderer\" \"npm:dev:electron\" \"npm:dev:start\"",
+    "dev:backend": "node ./node_modules/tsx/dist/cli.mjs watch backend/src/server.ts",
+    "dev:renderer": "vite",
+    "dev:frontend": "vite",
+    "dev:electron": "node ./node_modules/typescript/bin/tsc -p tsconfig.electron.json --watch --preserveWatchOutput",
+    "dev:start": "node scripts/dev-start.mjs",
+    "build:backend": "node --stack-size=4096 ./node_modules/typescript/bin/tsc -p backend/tsconfig.json",
+    "build:renderer": "vite build",
+    "build:electron": "node scripts/build-electron.mjs",
+    "build": "npm run build:renderer && npm run build:electron && npm run build:backend",
+    "build:render": "npm run prisma:generate && npm run build:backend && npm run build:renderer",
+    "start": "node dist-backend/server.js",
+    "start:render": "npm run prisma:push && node dist-backend/server.js",
+    "typecheck": "node ./node_modules/typescript/bin/tsc --noEmit -p tsconfig.app.json && node ./node_modules/typescript/bin/tsc --noEmit -p tsconfig.electron.json && node ./node_modules/typescript/bin/tsc --noEmit -p backend/tsconfig.json",
+    "test:unit": "node ./node_modules/typescript/bin/tsc -p tsconfig.tests.json && node --test tests/*.test.mjs",
+    "test:backend": "cross-env NODE_ENV=test node ./node_modules/tsx/dist/cli.mjs --test backend/tests/backend.test.ts",
+    "test": "npm run typecheck && npm run test:unit && npm run test:backend",
+    "db:start": "powershell -ExecutionPolicy Bypass -File scripts/start-postgres.ps1",
+    "prisma:generate": "node ./node_modules/prisma/build/index.js generate",
+    "prisma:push": "node ./node_modules/prisma/build/index.js db push --skip-generate",
+    "prisma:migrate": "node ./node_modules/prisma/build/index.js migrate dev",
+    "prisma:seed": "node ./node_modules/tsx/dist/cli.mjs prisma/seed.ts",
+    "check": "npm run typecheck && npm run build && node --test tests/*.test.mjs",
+    "preview": "vite preview",
+    "package:app": "npm run build && cross-env ELECTRON_BUILDER_CACHE=.cache/electron-builder CSC_IDENTITY_AUTO_DISCOVERY=false WIN_CSC_LINK=\"\" WIN_CSC_KEY_PASSWORD=\"\" electron-builder --dir",
+    "package:release": "npm run build && cross-env ELECTRON_BUILDER_CACHE=.cache/electron-builder electron-builder"
+  },
+  "prisma": {
+    "seed": "node ./node_modules/tsx/dist/cli.mjs prisma/seed.ts"
+  },
+  "build": {
+    "appId": "com.nexus.browser",
+    "productName": "Nexus Browser",
+    "icon": "assets/milo.png",
+    "electronDist": "node_modules/electron/dist",
+    "beforeBuild": "scripts/electron-builder-before-build.mjs",
+    "protocols": [
+      {
+        "name": "Web URLs",
+        "schemes": [
+          "http",
+          "https"
+        ]
+      }
+    ],
+    "files": [
+      "dist-renderer/**",
+      "dist-electron/**",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "assets/milo.png",
+        "to": "assets/milo.png"
+      }
+    ],
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.utilities"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  },
+  "devDependencies": {
+    "@radix-ui/react-scroll-area": "^1.2.10",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-slot": "^1.2.4",
+    "@tailwindcss/typography": "^0.5.19",
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.8",
+    "@types/node": "^22.13.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@types/ws": "^8.5.14",
+    "@vitejs/plugin-react": "^6.0.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^41.1.0",
+    "electron-builder": "^26.8.1",
+    "extract-zip": "^2.0.1",
+    "lucide-react": "^1.7.0",
+    "monaco-editor": "^0.55.1",
+    "motion": "^12.38.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-markdown": "^10.1.0",
+    "remark": "^15.0.1",
+    "remark-gfm": "^4.0.1",
+    "tailwind-merge": "^3.5.0",
+    "tailwindcss": "^4.2.2",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3",
+    "vite": "^8.0.3",
+    "wait-on": "^9.0.4"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.4.1",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "http-proxy-agent": "^7.0.2",
+    "https-proxy-agent": "^7.0.6",
+    "jsonwebtoken": "^9.0.2",
+    "openai": "^6.34.0",
+    "prisma": "^6.4.1",
+    "socks-proxy-agent": "^8.0.5",
+    "ws": "^8.18.0",
+    "zod": "^3.24.2"
+  }
+}

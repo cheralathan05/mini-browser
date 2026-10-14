@@ -1,0 +1,12 @@
+node_modules
+dist*
+.cache
+.DS_Store
+.env
+.env*.local
+pgdata/
+scratch/
+
+webos-home
+chrome-settings-clone
+modern-ai-chat

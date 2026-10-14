@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>Milo Folder Settings</title>
+    <script>
+      (function () {
+        try {
+          var params = new URLSearchParams(window.location.search);
+          var hasQueryLanguage = params.has("language");
+
+          function normalizeLanguage(value) {
+            var normalized = String(value || "system").trim().toLowerCase();
+            if (normalized === "en" || normalized === "en-us") return "en-US";
+            if (normalized === "zh" || normalized === "zh-cn" || normalized === "zh-hans") return "zh-CN";
+            return "system";
+          }
+
+          function resolveLocale(language, systemLanguage) {
+            if (language !== "system") return language;
+            return String(systemLanguage || "").trim().toLowerCase().indexOf("zh") === 0 ? "zh-CN" : "en-US";
+          }
+
+          var language = normalizeLanguage(hasQueryLanguage ? params.get("language") : "system");
+          if (!hasQueryLanguage) {
+            var storedSettings = JSON.parse(localStorage.getItem("milo.settings.v1") || "{}");
+            language = normalizeLanguage(storedSettings.language);
+          }
+
+          var systemLanguage = params.get("systemLanguage") || navigator.language || "en-US";
+          var locale = resolveLocale(language, systemLanguage);
+          document.documentElement.lang = locale;
+          document.title = locale === "zh-CN" ? "\u76ee\u5f55\u8bbe\u7f6e" : "Folder Settings";
+        } catch (error) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./folder-settings-main.tsx"></script>
+  </body>
+</html>

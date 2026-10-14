@@ -1,0 +1,106 @@
+@import "./pages-common.css";
+
+@layer base {
+  html,
+  body {
+    background: transparent !important;
+  }
+
+  body {
+    @apply h-screen w-screen overflow-hidden;
+  }
+}
+
+@layer components {
+  .page-search-shell {
+    @apply flex h-screen w-screen items-center justify-end;
+  }
+
+  .page-search-bar {
+    @apply flex h-14 w-full items-center gap-1 rounded-xl border border-white/10 bg-[#3a3b3f] px-2 py-2 text-white shadow-[0_16px_40px_rgba(15,23,42,0.24)];
+  }
+
+  .page-search-input {
+    @apply h-8 min-w-0 flex-1 rounded-md border border-white/10 bg-black/15 px-3 text-sm text-white/90 outline-none transition-colors;
+  }
+
+  .page-search-input::placeholder {
+    @apply text-white/35;
+  }
+
+  .page-search-input:focus {
+    @apply border-sky-300/55;
+  }
+
+  .page-search-input.no-match {
+    @apply border-rose-400/40 bg-rose-500/10 text-rose-200;
+  }
+
+  .page-search-count {
+    @apply min-w-[72px] px-2 text-right text-xs font-medium text-white/45;
+  }
+
+  .page-search-count.no-match {
+    @apply text-rose-200;
+  }
+
+  .page-search-divider {
+    @apply ml-1 flex items-center gap-0.5 border-l border-white/8 pl-1;
+  }
+
+  .page-search-button {
+    @apply flex h-7 w-7 items-center justify-center rounded-md text-white/55 transition-colors;
+  }
+
+  .page-search-button:hover {
+    @apply bg-white/8 text-white;
+  }
+
+  .page-search-button:disabled {
+    @apply cursor-not-allowed bg-transparent text-white/20;
+  }
+
+  [data-theme="light"] .page-search-bar {
+    @apply border-black/12 bg-white text-slate-800;
+  }
+
+  [data-theme="light"] .page-search-input {
+    @apply border-black/10 bg-white text-slate-800;
+  }
+
+  [data-theme="light"] .page-search-input::placeholder {
+    @apply text-slate-400;
+  }
+
+  [data-theme="light"] .page-search-input:focus {
+    @apply border-sky-500/55;
+  }
+
+  [data-theme="light"] .page-search-input.no-match {
+    @apply border-rose-300 bg-rose-50 text-rose-700;
+  }
+
+  [data-theme="light"] .page-search-count {
+    @apply text-slate-500;
+  }
+
+  [data-theme="light"] .page-search-count.no-match {
+    @apply text-rose-600;
+  }
+
+  [data-theme="light"] .page-search-divider {
+    @apply border-black/8;
+  }
+
+  [data-theme="light"] .page-search-button {
+    @apply text-slate-500;
+  }
+
+  [data-theme="light"] .page-search-button:hover {
+    @apply bg-black/5 text-slate-800;
+  }
+
+  [data-theme="light"] .page-search-button:disabled {
+    @apply text-slate-300;
+  }
+}

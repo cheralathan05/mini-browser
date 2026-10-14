@@ -1,0 +1,461 @@
+@import "./pages-common.css";
+
+@layer components {
+  .agent-header-actions {
+    @apply flex items-center gap-2;
+  }
+
+  .agent-secondary-button {
+    @apply inline-flex items-center gap-1.5 rounded-lg border border-slate-700/80 px-3 py-1.5 text-xs font-bold text-slate-300 transition-colors hover:border-slate-600 hover:bg-slate-800 hover:text-white;
+  }
+
+  .agent-secondary-button.icon-only {
+    @apply justify-center px-2.5 py-2.5;
+  }
+
+  .agent-secondary-button:disabled {
+    @apply cursor-not-allowed opacity-60;
+  }
+
+  .agent-secondary-button:disabled:hover {
+    @apply border-slate-700/80 bg-transparent text-slate-300;
+  }
+
+  .agent-secondary-button.is-warning {
+    @apply border-amber-500/25 text-amber-300/80 hover:border-amber-500/45 hover:bg-amber-500/10 hover:text-amber-200;
+  }
+
+  .agent-secondary-button.is-warning:disabled:hover {
+    @apply border-amber-500/25 bg-transparent text-amber-300/80;
+  }
+
+  .agent-status-pill.interrupted {
+    @apply bg-orange-500/10 text-orange-400;
+  }
+
+  .task-manager-shell {
+    @apply bg-transparent;
+  }
+
+  .task-manager-grid {
+    @apply grid flex-1 min-h-0 gap-5 overflow-y-auto px-6 py-6 md:grid-cols-2 2xl:grid-cols-3 content-start;
+  }
+
+  .task-manager-empty {
+    @apply col-span-full flex min-h-[320px] flex-col items-center justify-center rounded-[28px] border border-dashed border-slate-700/70 bg-slate-950/30 px-8 text-center;
+  }
+
+  /* ── Task card ────────────────────────────────────── */
+
+  .task-manager-card {
+    @apply relative flex flex-col gap-3.5 rounded-2xl border border-slate-800/80 p-5 transition-all duration-200;
+    background: linear-gradient(160deg, rgba(17, 24, 39, 0.92), rgba(15, 23, 42, 0.72));
+    box-shadow: 0 8px 32px rgba(2, 6, 23, 0.35);
+  }
+
+  .task-manager-card::before {
+    content: "";
+    @apply absolute left-0 top-4 bottom-4 w-[3px] rounded-full bg-slate-700/40 transition-colors duration-300;
+  }
+
+  .task-manager-card:hover {
+    border-color: rgba(100, 116, 139, 0.3);
+    box-shadow: 0 12px 40px rgba(2, 6, 23, 0.45);
+    transform: translateY(-1px);
+  }
+
+  /* Status-based left accent */
+  .task-manager-card[data-status="running"]::before {
+    background: linear-gradient(180deg, #818cf8, #6366f1);
+  }
+  .task-manager-card[data-status="running"]:hover {
+    border-color: rgba(99, 102, 241, 0.35);
+    box-shadow: 0 12px 40px rgba(99, 102, 241, 0.15);
+  }
+
+  .task-manager-card[data-status="waiting_event"]::before {
+    background: linear-gradient(180deg, #38bdf8, #0ea5e9);
+  }
+
+  .task-manager-card[data-status="queued"]::before {
+    background: linear-gradient(180deg, #fbbf24, #f59e0b);
+  }
+
+  .task-manager-card[data-status="error"]::before {
+    background: linear-gradient(180deg, #fb7185, #f43f5e);
+  }
+
+  .task-manager-card[data-status="interrupted"]::before {
+    background: linear-gradient(180deg, #fb923c, #f97316);
+  }
+
+  .task-manager-card[data-status="idle"]::before {
+    background: linear-gradient(180deg, #94a3b8, #64748b);
+  }
+
+  /* ── Card header ──────────────────────────────────── */
+
+  .task-manager-card-header {
+    @apply flex items-start justify-between gap-3;
+  }
+
+  .task-manager-copy {
+    @apply min-w-0 flex-1;
+  }
+
+  .task-manager-title-row {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  .task-manager-title-row h3 {
+    @apply text-[15px] font-semibold text-white leading-snug;
+  }
+
+  .task-manager-copy p {
+    @apply mt-1.5 text-[13px] leading-relaxed text-slate-400 line-clamp-2;
+  }
+
+  /* ── Status pill ──────────────────────────────────── */
+
+  .task-manager-status-pill {
+    @apply inline-flex items-center gap-1.5 shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors;
+  }
+
+  .task-manager-status-dot {
+    @apply h-1.5 w-1.5 rounded-full;
+  }
+
+  .task-manager-status-pill.running {
+    @apply bg-indigo-500/15 text-indigo-300;
+  }
+  .task-manager-status-pill.running .task-manager-status-dot {
+    @apply bg-indigo-400;
+    animation: status-pulse 1.5s ease-in-out infinite;
+  }
+
+  .task-manager-status-pill.waiting_event {
+    @apply bg-sky-500/15 text-sky-300;
+  }
+  .task-manager-status-pill.waiting_event .task-manager-status-dot {
+    @apply bg-sky-400;
+    animation: status-pulse 1.5s ease-in-out infinite;
+  }
+
+  .task-manager-status-pill.queued {
+    @apply bg-amber-500/15 text-amber-300;
+  }
+  .task-manager-status-pill.queued .task-manager-status-dot {
+    @apply bg-amber-400;
+    animation: status-pulse 1.5s ease-in-out infinite;
+  }
+
+  .task-manager-status-pill.error {
+    @apply bg-rose-500/12 text-rose-300;
+  }
+  .task-manager-status-pill.error .task-manager-status-dot {
+    @apply bg-rose-400;
+  }
+
+  .task-manager-status-pill.interrupted {
+    @apply bg-orange-500/12 text-orange-300;
+  }
+  .task-manager-status-pill.interrupted .task-manager-status-dot {
+    @apply bg-orange-400;
+  }
+
+  .task-manager-status-pill.idle {
+    @apply bg-slate-500/15 text-slate-400;
+  }
+  .task-manager-status-pill.idle .task-manager-status-dot {
+    @apply bg-slate-500;
+  }
+
+  @keyframes status-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
+  }
+
+  /* ── Meta ─────────────────────────────────────────── */
+
+  .task-manager-meta {
+    @apply flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-medium text-slate-500;
+  }
+
+  .task-manager-meta-item {
+    @apply inline-flex items-center gap-1.5;
+  }
+
+  .task-manager-meta-item svg {
+    @apply h-3 w-3 opacity-60;
+  }
+
+  .task-manager-session-block {
+    @apply rounded-xl border border-slate-800/70 bg-slate-950/35 px-3 py-2.5;
+  }
+
+  .task-manager-session-label {
+    @apply inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500;
+  }
+
+  .task-manager-session-label svg {
+    @apply h-3 w-3 opacity-70;
+  }
+
+  .task-manager-session-id {
+    @apply mt-2 block overflow-hidden text-ellipsis break-all font-mono text-[11px] leading-5 text-slate-300;
+  }
+
+  .task-manager-trigger-panel {
+    @apply rounded-xl border border-sky-500/15 bg-sky-500/6 px-3 py-3;
+  }
+
+  .task-manager-trigger-header {
+    @apply flex flex-wrap items-center justify-between gap-2;
+  }
+
+  .task-manager-trigger-badge {
+    @apply inline-flex flex-wrap items-center gap-1.5 rounded-full border border-sky-400/20 bg-sky-400/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-sky-200;
+  }
+
+  .task-manager-trigger-badge svg {
+    @apply h-3 w-3;
+  }
+
+  .task-manager-trigger-detail {
+    @apply text-[11px] font-medium text-slate-400;
+  }
+
+  .task-manager-trigger-prompt {
+    @apply mt-2 text-[13px] leading-relaxed text-slate-200;
+  }
+
+  .task-manager-trigger-expression {
+    @apply mt-2 block overflow-x-auto rounded-lg border border-slate-800/80 bg-slate-950/55 px-3 py-2 font-mono text-xs text-sky-200;
+  }
+
+  .task-manager-trigger-meta {
+    @apply mt-2;
+  }
+
+  .task-manager-trigger-note {
+    @apply mt-2 flex items-start gap-2 rounded-lg border border-slate-800/80 bg-slate-950/45 px-3 py-2 text-xs leading-5 text-slate-300;
+  }
+
+  .task-manager-trigger-note svg {
+    @apply mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400;
+  }
+
+  /* ── Error ────────────────────────────────────────── */
+
+  .task-manager-error {
+    @apply flex items-start gap-2 rounded-xl border border-rose-500/15 bg-rose-500/6 px-3 py-2.5 text-xs leading-5 text-rose-300/90;
+  }
+
+  .task-manager-error svg {
+    @apply h-3.5 w-3.5 shrink-0 mt-0.5 text-rose-400;
+  }
+
+  /* ── Actions ──────────────────────────────────────── */
+
+  .task-manager-actions {
+    @apply mt-auto pt-1 flex flex-wrap gap-2;
+  }
+
+  .task-manager-action {
+    @apply inline-flex items-center gap-1.5 rounded-lg border border-slate-700/70 px-3 py-1.5 text-[11px] font-semibold text-slate-300 transition-all duration-150 hover:border-slate-600 hover:bg-slate-800/80 hover:text-white;
+  }
+
+  .task-manager-action svg {
+    @apply h-3 w-3;
+  }
+
+  .task-manager-action.is-primary {
+    @apply border-indigo-500/40 bg-indigo-500/10 text-indigo-300 hover:border-indigo-500/60 hover:bg-indigo-500/18 hover:text-indigo-200;
+  }
+
+  .task-manager-action.is-danger {
+    @apply border-rose-500/25 text-rose-300/80 hover:border-rose-500/45 hover:bg-rose-500/10 hover:text-rose-200;
+  }
+
+  .task-manager-action.is-warning {
+    @apply border-amber-500/25 text-amber-300/80 hover:border-amber-500/45 hover:bg-amber-500/10 hover:text-amber-200;
+  }
+}
+
+/* ── Light theme ──────────────────────────────────────── */
+
+@layer components {
+  [data-theme="light"] .agent-secondary-button {
+    @apply border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900;
+  }
+
+  [data-theme="light"] .agent-secondary-button:disabled:hover {
+    @apply border-slate-200 bg-white text-slate-600;
+  }
+
+  [data-theme="light"] .agent-secondary-button.is-warning {
+    @apply border-amber-200 text-amber-500 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700;
+  }
+
+  [data-theme="light"] .agent-secondary-button.is-warning:disabled:hover {
+    @apply border-amber-200 bg-white text-amber-500;
+  }
+
+  [data-theme="light"] .agent-status-pill.interrupted {
+    @apply bg-orange-50 text-orange-600;
+  }
+
+  [data-theme="light"] .task-manager-empty {
+    @apply border-slate-200 bg-white/80;
+  }
+
+  [data-theme="light"] .task-manager-card {
+    @apply border-slate-200/80;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.92));
+    box-shadow: 0 4px 16px rgba(148, 163, 184, 0.12);
+  }
+
+  [data-theme="light"] .task-manager-card::before {
+    background: rgba(203, 213, 225, 0.5);
+  }
+
+  [data-theme="light"] .task-manager-card:hover {
+    border-color: rgba(148, 163, 184, 0.4);
+    box-shadow: 0 8px 24px rgba(148, 163, 184, 0.18);
+  }
+
+  [data-theme="light"] .task-manager-card[data-status="running"]::before {
+    background: linear-gradient(180deg, #818cf8, #6366f1);
+  }
+  [data-theme="light"] .task-manager-card[data-status="running"]:hover {
+    border-color: rgba(99, 102, 241, 0.25);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.1);
+  }
+  [data-theme="light"] .task-manager-card[data-status="waiting_event"]::before {
+    background: linear-gradient(180deg, #38bdf8, #0ea5e9);
+  }
+  [data-theme="light"] .task-manager-card[data-status="queued"]::before {
+    background: linear-gradient(180deg, #fbbf24, #f59e0b);
+  }
+  [data-theme="light"] .task-manager-card[data-status="error"]::before {
+    background: linear-gradient(180deg, #fb7185, #f43f5e);
+  }
+  [data-theme="light"] .task-manager-card[data-status="interrupted"]::before {
+    background: linear-gradient(180deg, #fb923c, #f97316);
+  }
+  [data-theme="light"] .task-manager-card[data-status="idle"]::before {
+    background: linear-gradient(180deg, #94a3b8, #64748b);
+  }
+
+  [data-theme="light"] .task-manager-title-row h3 {
+    @apply text-slate-900;
+  }
+
+  [data-theme="light"] .task-manager-copy p {
+    @apply text-slate-500;
+  }
+
+  [data-theme="light"] .task-manager-status-pill.running {
+    @apply bg-indigo-50 text-indigo-600;
+  }
+  [data-theme="light"] .task-manager-status-pill.running .task-manager-status-dot {
+    @apply bg-indigo-500;
+  }
+  [data-theme="light"] .task-manager-status-pill.waiting_event {
+    @apply bg-sky-50 text-sky-600;
+  }
+  [data-theme="light"] .task-manager-status-pill.waiting_event .task-manager-status-dot {
+    @apply bg-sky-500;
+  }
+  [data-theme="light"] .task-manager-status-pill.queued {
+    @apply bg-amber-50 text-amber-600;
+  }
+  [data-theme="light"] .task-manager-status-pill.queued .task-manager-status-dot {
+    @apply bg-amber-500;
+  }
+  [data-theme="light"] .task-manager-status-pill.error {
+    @apply bg-rose-50 text-rose-600;
+  }
+  [data-theme="light"] .task-manager-status-pill.error .task-manager-status-dot {
+    @apply bg-rose-500;
+  }
+  [data-theme="light"] .task-manager-status-pill.interrupted {
+    @apply bg-orange-50 text-orange-600;
+  }
+  [data-theme="light"] .task-manager-status-pill.interrupted .task-manager-status-dot {
+    @apply bg-orange-500;
+  }
+  [data-theme="light"] .task-manager-status-pill.idle {
+    @apply bg-slate-100 text-slate-500;
+  }
+  [data-theme="light"] .task-manager-status-pill.idle .task-manager-status-dot {
+    @apply bg-slate-400;
+  }
+
+  [data-theme="light"] .task-manager-meta {
+    @apply text-slate-400;
+  }
+
+  [data-theme="light"] .task-manager-session-block {
+    @apply border-slate-200 bg-white/75;
+  }
+
+  [data-theme="light"] .task-manager-session-label {
+    @apply text-slate-400;
+  }
+
+  [data-theme="light"] .task-manager-session-id {
+    @apply text-slate-600;
+  }
+
+  [data-theme="light"] .task-manager-trigger-panel {
+    @apply border-sky-200 bg-sky-50/80;
+  }
+
+  [data-theme="light"] .task-manager-trigger-badge {
+    @apply border-sky-200 bg-sky-100 text-sky-700;
+  }
+
+  [data-theme="light"] .task-manager-trigger-detail {
+    @apply text-slate-500;
+  }
+
+  [data-theme="light"] .task-manager-trigger-prompt {
+    @apply text-slate-700;
+  }
+
+  [data-theme="light"] .task-manager-trigger-expression {
+    @apply border-slate-200 bg-white text-sky-700;
+  }
+
+  [data-theme="light"] .task-manager-trigger-note {
+    @apply border-slate-200 bg-white text-slate-600;
+  }
+
+  [data-theme="light"] .task-manager-trigger-note svg {
+    @apply text-slate-400;
+  }
+
+  [data-theme="light"] .task-manager-error {
+    @apply border-rose-200 bg-rose-50 text-rose-600;
+  }
+  [data-theme="light"] .task-manager-error svg {
+    @apply text-rose-500;
+  }
+
+  [data-theme="light"] .task-manager-action {
+    @apply border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900;
+  }
+
+  [data-theme="light"] .task-manager-action.is-primary {
+    @apply border-indigo-200 bg-indigo-50 text-indigo-600 hover:border-indigo-300 hover:bg-indigo-100 hover:text-indigo-700;
+  }
+
+  [data-theme="light"] .task-manager-action.is-danger {
+    @apply border-rose-200 text-rose-500 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700;
+  }
+
+  [data-theme="light"] .task-manager-action.is-warning {
+    @apply border-amber-200 text-amber-500 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700;
+  }
+}

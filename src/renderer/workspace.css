@@ -1,0 +1,224 @@
+@import "./pages-common.css";
+
+@layer components {
+  .page {
+    @apply flex h-screen flex-col overflow-hidden selection:bg-[#8ab4f8]/30;
+  }
+
+  /* ── Header ── */
+  .hero {
+    @apply flex shrink-0 items-center justify-between border-b px-12 py-6;
+    border-color: transparent;
+  }
+
+  .hero h1 {
+    @apply m-0 text-[22px] font-normal text-[#e8eaed];
+  }
+
+  .hero p {
+    @apply m-0 mt-1 text-[12px] leading-[1.5] text-[#9aa0a6];
+  }
+
+  /* ── Status ── */
+  .status {
+    @apply text-[13px] text-[#9aa0a6];
+  }
+
+  .status:empty {
+    @apply hidden;
+  }
+
+  .status.ok {
+    @apply text-emerald-400;
+  }
+
+  .status.err {
+    @apply text-rose-300;
+  }
+
+  /* ── Workspace grid ── */
+  .workspace-grid {
+    @apply grid flex-1 overflow-y-auto gap-4 px-12 py-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5;
+  }
+
+  /* ── Workspace card ── */
+  .workspace-card {
+    @apply flex flex-col overflow-hidden rounded-[12px] p-4;
+    background: #292a2d;
+    height: 200px;
+  }
+
+  .workspace-card.is-current {
+    border: 1px solid rgba(138, 180, 248, 0.3);
+    background: rgba(138, 180, 248, 0.06);
+  }
+
+  .workspace-card-topline {
+    @apply flex items-start justify-between gap-3;
+  }
+
+  .workspace-card-heading {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  .workspace-rename-row {
+    @apply flex min-w-0 flex-1 flex-wrap items-center gap-2;
+  }
+
+  .workspace-card-heading h2 {
+    @apply m-0 truncate text-[15px] font-medium text-[#e8eaed];
+  }
+
+  .workspace-rename-input {
+    @apply h-9 min-w-[180px] flex-1 rounded-[10px] border border-[#5f6368] bg-[#202124] px-3 text-[14px] text-[#e8eaed] outline-none transition-colors;
+  }
+
+  .workspace-rename-input:focus {
+    border-color: rgba(138, 180, 248, 0.65);
+    box-shadow: 0 0 0 3px rgba(138, 180, 248, 0.14);
+  }
+
+  .workspace-rename-input::placeholder {
+    color: #9aa0a6;
+  }
+
+  .workspace-badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em];
+  }
+
+  .workspace-badge-current {
+    @apply text-[#8ab4f8];
+    background: rgba(138, 180, 248, 0.15);
+  }
+
+  .workspace-badge-locked {
+    @apply text-amber-300;
+    background: rgba(251, 191, 36, 0.15);
+  }
+
+  .workspace-chip-row {
+    @apply mt-3 flex flex-wrap gap-1.5;
+  }
+
+  .workspace-chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] text-[#9aa0a6];
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .workspace-top-delete {
+    @apply inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border border-rose-400/30 bg-transparent p-0 text-rose-300 transition-colors;
+  }
+
+  .hero-actions {
+    @apply flex shrink-0 items-center gap-2;
+  }
+
+  .workspace-top-actions {
+    @apply flex shrink-0 items-center gap-2;
+  }
+
+  .workspace-top-action {
+    @apply inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#5f6368] bg-transparent p-0 text-[#8ab4f8] transition-colors;
+  }
+
+  .workspace-top-action:hover {
+    background: rgba(138, 180, 248, 0.1);
+  }
+
+  .workspace-top-action:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  .workspace-top-delete:hover {
+    background: rgba(244, 143, 177, 0.1);
+  }
+
+  .workspace-top-delete:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  /* ── Light theme ── */
+  [data-theme="light"] .hero h1 {
+    @apply text-[#202124];
+  }
+
+  [data-theme="light"] .hero p {
+    @apply text-[#5f6368];
+  }
+
+  [data-theme="light"] .status {
+    @apply text-[#5f6368];
+  }
+
+  [data-theme="light"] .status.err {
+    @apply text-rose-600;
+  }
+
+  [data-theme="light"] .workspace-card {
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+
+  [data-theme="light"] .workspace-card.is-current {
+    border-color: rgba(26, 115, 232, 0.3);
+    background: rgba(26, 115, 232, 0.04);
+  }
+
+  [data-theme="light"] .workspace-card-heading h2 {
+    @apply text-[#202124];
+  }
+
+  [data-theme="light"] .workspace-rename-input {
+    @apply border-[#dadce0] bg-white text-[#202124];
+  }
+
+  [data-theme="light"] .workspace-rename-input::placeholder {
+    color: #5f6368;
+  }
+
+  [data-theme="light"] .workspace-rename-input:focus {
+    border-color: rgba(26, 115, 232, 0.45);
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
+  }
+
+  [data-theme="light"] .workspace-badge-current {
+    @apply text-[#1a73e8];
+    background: rgba(26, 115, 232, 0.12);
+  }
+
+  [data-theme="light"] .workspace-badge-locked {
+    @apply text-amber-700;
+    background: rgba(251, 191, 36, 0.15);
+  }
+
+  [data-theme="light"] .workspace-chip {
+    @apply text-[#5f6368];
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  [data-theme="light"] .workspace-top-delete {
+    @apply border-rose-300/60 text-rose-600;
+  }
+
+  [data-theme="light"] .workspace-top-action {
+    @apply border-[#dadce0] text-[#1a73e8];
+  }
+
+  [data-theme="light"] .workspace-top-action:hover {
+    background: rgba(26, 115, 232, 0.08);
+  }
+
+  [data-theme="light"] .workspace-top-delete:hover {
+    background: rgba(244, 63, 94, 0.08);
+  }
+
+  @media (max-width: 1020px) {
+    .workspace-grid {
+      @apply grid-cols-1 px-6;
+    }
+
+    .hero {
+      @apply px-6;
+    }
+  }
+}

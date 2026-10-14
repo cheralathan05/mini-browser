@@ -1,0 +1,261 @@
+@import "./workspace.css";
+
+@layer components {
+  .widget-manager-grid {
+    align-content: start;
+  }
+
+  .widget-manager-hero-action {
+    @apply inline-flex h-9 items-center gap-2 rounded-full border border-[#5f6368] bg-transparent px-3 text-[13px] text-[#8ab4f8] transition-all duration-200;
+  }
+
+  .widget-manager-hero-action:hover {
+    background: rgba(138, 180, 248, 0.1);
+    border-color: rgba(138, 180, 248, 0.4);
+  }
+
+  .widget-manager-hero-action:active {
+    transform: scale(0.97);
+  }
+
+  .widget-manager-hero-action:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  .widget-manager-card {
+    height: auto;
+    min-height: 260px;
+    gap: 14px;
+    transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .widget-manager-card:hover {
+    border-color: rgba(138, 180, 248, 0.2);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .widget-manager-card-feature {
+    @apply sm:col-span-2 md:col-span-2 lg:col-span-2 xl:col-span-2;
+  }
+
+  .widget-manager-card-fill {
+    @apply sm:col-span-2 md:col-span-3 lg:col-span-4 xl:col-span-5;
+  }
+
+  .widget-manager-empty {
+    @apply items-center justify-center text-center;
+  }
+
+  .widget-manager-empty-icon {
+    @apply mb-4 flex h-16 w-16 items-center justify-center rounded-2xl;
+    background: rgba(138, 180, 248, 0.1);
+    color: #8ab4f8;
+  }
+
+  .widget-manager-empty h2 {
+    @apply m-0 text-[16px] font-medium text-[#e8eaed];
+  }
+
+  .widget-manager-empty p {
+    @apply m-0 mt-2 max-w-[560px] text-[12px] leading-[1.6] text-[#9aa0a6];
+  }
+
+  .widget-manager-empty-actions {
+    @apply mt-5 flex flex-wrap items-center justify-center gap-2;
+  }
+
+  .widget-manager-empty-action {
+    @apply inline-flex h-9 items-center gap-2 rounded-full border border-[#5f6368] bg-transparent px-4 text-[13px] text-[#8ab4f8] transition-all duration-200;
+  }
+
+  .widget-manager-empty-action:hover {
+    background: rgba(138, 180, 248, 0.1);
+    border-color: rgba(138, 180, 248, 0.4);
+  }
+
+  .widget-manager-empty-action:active {
+    transform: scale(0.97);
+  }
+
+  .widget-manager-card-header {
+    @apply flex items-start justify-between gap-3;
+  }
+
+  .widget-manager-card-title-row {
+    @apply flex min-w-0 flex-wrap items-center gap-2;
+  }
+
+  .widget-manager-card-title-row h2 {
+    @apply m-0 truncate text-[15px] font-medium text-[#e8eaed];
+  }
+
+  .widget-manager-card-copy {
+    @apply m-0 mt-2 text-[12px] leading-[1.6] text-[#9aa0a6];
+  }
+
+  .widget-manager-badge {
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.14);
+  }
+
+  .widget-manager-meta-list {
+    @apply flex flex-col gap-3;
+  }
+
+  .widget-manager-meta-list div {
+    @apply min-w-0;
+  }
+
+  .widget-manager-meta-list dt {
+    @apply m-0 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9aa0a6];
+  }
+
+  .widget-manager-meta-list dd {
+    @apply m-0 mt-1 text-[12px] leading-[1.6] text-[#e8eaed];
+    word-break: break-word;
+  }
+
+  .widget-manager-path {
+    font-family: "SFMono-Regular", ui-monospace, monospace;
+  }
+
+  .widget-manager-actions {
+    @apply mt-auto flex flex-wrap gap-2;
+  }
+
+  .widget-manager-action {
+    @apply inline-flex min-h-9 items-center gap-2 rounded-full border border-[#5f6368] bg-transparent px-3 text-[13px] text-[#8ab4f8] transition-all duration-200;
+  }
+
+  .widget-manager-action:hover {
+    background: rgba(138, 180, 248, 0.1);
+    border-color: rgba(138, 180, 248, 0.4);
+  }
+
+  .widget-manager-action:active {
+    transform: scale(0.97);
+  }
+
+  .widget-manager-action-danger {
+    @apply text-rose-300 border-rose-400/30;
+  }
+
+  .widget-manager-action-danger:hover {
+    background: rgba(244, 143, 177, 0.1);
+    border-color: rgba(244, 143, 177, 0.4);
+  }
+
+  .widget-manager-manifest-wrap {
+    @apply mt-1 overflow-hidden rounded-[14px] border border-white/8 p-3;
+    background: rgba(15, 23, 42, 0.28);
+    animation: manifest-slide-in 0.2s ease-out;
+  }
+
+  @keyframes manifest-slide-in {
+    from {
+      opacity: 0;
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+    to {
+      opacity: 1;
+      max-height: 400px;
+    }
+  }
+
+  .widget-manager-manifest-title {
+    @apply m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9aa0a6];
+  }
+
+  .widget-manager-manifest {
+    @apply m-0 mt-2 text-[12px] leading-[1.6] text-[#dbe4ee];
+    max-height: 220px;
+    overflow: auto;
+    font-family: "SFMono-Regular", ui-monospace, monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* ── Light theme ── */
+
+  [data-theme="light"] .widget-manager-hero-action {
+    @apply border-[#dadce0] text-[#1a73e8];
+  }
+
+  [data-theme="light"] .widget-manager-hero-action:hover {
+    background: rgba(26, 115, 232, 0.08);
+    border-color: rgba(26, 115, 232, 0.3);
+  }
+
+  [data-theme="light"] .widget-manager-card:hover {
+    border-color: rgba(26, 115, 232, 0.2);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  [data-theme="light"] .widget-manager-empty h2,
+  [data-theme="light"] .widget-manager-card-title-row h2,
+  [data-theme="light"] .widget-manager-meta-list dd {
+    @apply text-[#202124];
+  }
+
+  [data-theme="light"] .widget-manager-empty p,
+  [data-theme="light"] .widget-manager-card-copy,
+  [data-theme="light"] .widget-manager-meta-list dt,
+  [data-theme="light"] .widget-manager-manifest-title {
+    @apply text-[#5f6368];
+  }
+
+  [data-theme="light"] .widget-manager-empty-icon {
+    background: rgba(26, 115, 232, 0.08);
+    color: #1a73e8;
+  }
+
+  [data-theme="light"] .widget-manager-empty-action {
+    @apply border-[#dadce0] text-[#1a73e8];
+  }
+
+  [data-theme="light"] .widget-manager-empty-action:hover {
+    background: rgba(26, 115, 232, 0.08);
+    border-color: rgba(26, 115, 232, 0.3);
+  }
+
+  [data-theme="light"] .widget-manager-badge {
+    color: #b45309;
+    background: rgba(245, 158, 11, 0.14);
+  }
+
+  [data-theme="light"] .widget-manager-action {
+    @apply border-[#dadce0] text-[#1a73e8];
+  }
+
+  [data-theme="light"] .widget-manager-action:hover {
+    background: rgba(26, 115, 232, 0.08);
+    border-color: rgba(26, 115, 232, 0.3);
+  }
+
+  [data-theme="light"] .widget-manager-action-danger {
+    @apply text-rose-600 border-rose-300/60;
+  }
+
+  [data-theme="light"] .widget-manager-action-danger:hover {
+    background: rgba(244, 63, 94, 0.08);
+    border-color: rgba(244, 63, 94, 0.3);
+  }
+
+  [data-theme="light"] .widget-manager-manifest-wrap {
+    border-color: rgba(15, 23, 42, 0.08);
+    background: rgba(15, 23, 42, 0.04);
+  }
+
+  [data-theme="light"] .widget-manager-manifest {
+    @apply text-[#374151];
+  }
+
+  @media (max-width: 1020px) {
+    .widget-manager-card-feature,
+    .widget-manager-card-fill {
+      grid-column: span 1 / span 1;
+    }
+  }
+}

@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Milo Find in Page</title>
+  <script>(function(){try{var s=JSON.parse(localStorage.getItem("milo.settings.v1")||"{}"),t=s.theme||"system";function a(e){document.documentElement.setAttribute("data-theme",e==="system"?(window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"):e)}a(t);window.matchMedia("(prefers-color-scheme:dark)").addEventListener("change",function(){var c=JSON.parse(localStorage.getItem("milo.settings.v1")||"{}");(c.theme||"system")==="system"&&a("system")})}catch(e){}})()</script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/page-search-main.tsx"></script>
+</body>
+</html>

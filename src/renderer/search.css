@@ -1,0 +1,178 @@
+@import "./pages-common.css";
+
+@layer base {
+  html,
+  body {
+    background: transparent !important;
+  }
+
+  body {
+    @apply h-screen w-screen overflow-hidden;
+    /* Inset the card from the overlay window edges so the drop shadow is visible */
+    padding: 14px;
+    box-sizing: border-box;
+  }
+}
+
+@layer components {
+  .card {
+    @apply flex flex-col overflow-hidden rounded-2xl;
+    width: 100%;
+    height: 100%;
+    background: rgba(24, 24, 28, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.5),
+      0 8px 32px rgba(0, 0, 0, 0.55),
+      0 32px 64px rgba(0, 0, 0, 0.35),
+      0 2px 8px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .search-row {
+    @apply flex items-center gap-3 border-b border-white/8 px-4 py-3.5;
+  }
+
+  .search-icon {
+    @apply shrink-0 text-white/35;
+  }
+
+  .search-input {
+    @apply flex-1 border-0 bg-transparent text-sm text-white outline-none;
+  }
+
+  .search-input::placeholder {
+    @apply text-white/30;
+  }
+
+  .kbd {
+    @apply shrink-0 rounded border border-white/12 bg-white/5 px-1.5 py-0.5 text-[10px] text-white/40;
+  }
+
+  .results {
+    @apply flex-1 overflow-y-auto p-1.5;
+  }
+
+  .results::-webkit-scrollbar {
+    @apply w-1;
+  }
+
+  .results::-webkit-scrollbar-thumb {
+    @apply rounded-sm bg-white/10;
+  }
+
+  .group-label {
+    @apply px-2.5 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white/30;
+  }
+
+  .item {
+    @apply flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 transition-colors duration-100;
+  }
+
+  .item:hover,
+  .item.active {
+    @apply bg-white/6;
+  }
+
+  .item img {
+    @apply size-4 shrink-0 rounded-[3px];
+  }
+
+  .item-info {
+    @apply min-w-0 flex-1;
+  }
+
+  .item-title {
+    @apply truncate text-[13px];
+  }
+
+  .item-url {
+    @apply truncate text-[11px] text-white/35;
+  }
+
+  .item-badge {
+    @apply shrink-0 rounded bg-blue-500/15 px-1.5 py-0.5 text-[10px] text-blue-400;
+  }
+
+  .item-delete {
+    @apply flex size-5 shrink-0 items-center justify-center rounded border-0 bg-transparent text-white/15 opacity-0 transition;
+  }
+
+  .item:hover .item-delete {
+    @apply opacity-100;
+  }
+
+  .item-delete:hover {
+    @apply bg-white/8 text-white/60;
+  }
+
+  .empty {
+    @apply px-4 py-8 text-center text-[13px] text-white/25;
+  }
+
+  /* ── Light theme overrides ── */
+  [data-theme="light"] .card {
+    background: rgba(248, 248, 250, 0.97);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.06),
+      0 8px 32px rgba(0, 0, 0, 0.18),
+      0 32px 64px rgba(0, 0, 0, 0.10),
+      0 2px 8px rgba(0, 0, 0, 0.12);
+  }
+
+  [data-theme="light"] .search-row {
+    @apply border-black/6;
+  }
+
+  [data-theme="light"] .search-icon {
+    @apply text-slate-400;
+  }
+
+  [data-theme="light"] .search-input {
+    @apply text-slate-800;
+  }
+
+  [data-theme="light"] .search-input::placeholder {
+    @apply text-slate-400;
+  }
+
+  [data-theme="light"] .kbd {
+    @apply border-black/10 bg-black/5 text-slate-400;
+  }
+
+  [data-theme="light"] .group-label {
+    @apply text-slate-400;
+  }
+
+  [data-theme="light"] .item:hover,
+  [data-theme="light"] .item.active {
+    @apply bg-black/5;
+  }
+
+  [data-theme="light"] .item-title {
+    @apply text-slate-800;
+  }
+
+  [data-theme="light"] .item-url {
+    @apply text-slate-400;
+  }
+
+  [data-theme="light"] .item-delete {
+    @apply text-slate-300;
+  }
+
+  [data-theme="light"] .item-delete:hover {
+    @apply bg-black/5 text-slate-500;
+  }
+
+  [data-theme="light"] .empty {
+    @apply text-slate-400;
+  }
+
+  [data-theme="light"] .results::-webkit-scrollbar-thumb {
+    @apply bg-black/10;
+  }
+}
+

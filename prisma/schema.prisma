@@ -1,0 +1,888 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String             @id @default(uuid())
+  email             String             @unique
+  name              String
+  passwordHash      String
+  avatar            String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  sessions          Session[]
+  workspaces        Workspace[]
+  conversations     Conversation[]
+  agentTasks        AgentTask[]
+  researchProjects  ResearchProject[]
+  memories          Memory[]
+  skills            Skill[]
+  approvals         ApprovalRequest[]
+  activityEvents    ActivityEvent[]
+  notifications     Notification[]
+  aiProviderConfigs AIProviderConfig[]
+  preferences       UserPreference[]
+
+  @@index([email])
+  @@index([createdAt])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+model Workspace {
+  id               String            @id @default(uuid())
+  userId           String
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name             String
+  description      String?
+  settings         Json?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  browserSessions  BrowserSession[]
+  conversations    Conversation[]
+  agentTasks       AgentTask[]
+  researchProjects ResearchProject[]
+  workflows        Workflow[]
+  memories         Memory[]
+  skills           Skill[]
+  approvals        ApprovalRequest[]
+  activityEvents   ActivityEvent[]
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model BrowserSession {
+  id          String       @id @default(uuid())
+  workspaceId String
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  tabs        BrowserTab[]
+
+  @@index([workspaceId])
+  @@index([createdAt])
+}
+
+model BrowserTab {
+  id               String         @id @default(uuid())
+  browserSessionId String
+  browserSession   BrowserSession @relation(fields: [browserSessionId], references: [id], onDelete: Cascade)
+  url              String
+  title            String
+  favicon          String?
+  position         Int            @default(0)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([browserSessionId])
+  @@index([position])
+}
+
+model Conversation {
+  id               String            @id @default(uuid())
+  workspaceId      String
+  workspace        Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title            String
+  spaceId          String?
+  contextType      String?           @default("page")
+  browserSessionId String?
+  browserTabId     String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  messages         Message[]
+  snapshots        ContextSnapshot[]
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([spaceId])
+  @@index([createdAt])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String
+  content        String       @db.Text
+  model          String?
+  status         String       @default("completed")
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ContextSnapshot {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  url            String?
+  title          String?
+  selectedText   String?      @db.Text
+  sourceType     String       @default("page")
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@index([createdAt])
+}
+
+model AgentTask {
+  id          String            @id @default(uuid())
+  workspaceId String
+  workspace   Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  spaceId     String?
+  title       String
+  goal        String            @db.Text
+  status      String            @default("pending")
+  priority    String            @default("medium")
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  runs        AgentRun[]
+  steps       AgentStep[]
+  approvals   ApprovalRequest[]
+  activities  ActivityEvent[]
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([spaceId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model AgentRun {
+  id            String             @id @default(uuid())
+  agentTaskId   String
+  task          AgentTask          @relation(fields: [agentTaskId], references: [id], onDelete: Cascade)
+  status        String             @default("RUNNING") // DRAFT, READY, RUNNING, PAUSED, WAITING_APPROVAL, COMPLETED, FAILED, CANCELLED
+  model         String?
+  executionMode String             @default("balanced") // quick, balanced, advanced
+  startedAt     DateTime           @default(now())
+  completedAt   DateTime?
+  currentStep   Int                @default(0)
+  progress      Float              @default(0)
+  error         String?            @db.Text
+  metadata      Json?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @default(now()) @updatedAt
+
+  plans         AgentPlan[]
+  steps         AgentStep[]
+  toolCalls     AgentToolCall[]
+  observations  AgentObservation[]
+  artifacts     AgentArtifact[]
+  approvals     ApprovalRequest[]
+
+  @@index([agentTaskId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model AgentPlan {
+  id          String    @id @default(uuid())
+  agentRunId  String
+  run         AgentRun  @relation(fields: [agentRunId], references: [id], onDelete: Cascade)
+  version     Int       @default(1)
+  status      String    @default("active") // active, revised, completed
+  steps       Json      // array of PlannedStep objects
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+
+  @@index([agentRunId])
+}
+
+model AgentStep {
+  id          String             @id @default(uuid())
+  taskId      String?
+  task        AgentTask?         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  agentRunId  String?
+  run         AgentRun?          @relation(fields: [agentRunId], references: [id], onDelete: Cascade)
+  stepIndex   Int                @default(0)
+  type        String             @default("tool_call") // tool_call, verification, answer, plan
+  description String?            @db.Text
+  toolName    String?
+  status      String             @default("pending") // PENDING, RUNNING, WAITING_APPROVAL, COMPLETED, FAILED, SKIPPED, CANCELLED
+  retryCount  Int                @default(0)
+  input       Json?
+  output      Json?
+  error       String?            @db.Text
+  metadata    Json?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @default(now()) @updatedAt
+
+  toolCalls    AgentToolCall[]
+  observations AgentObservation[]
+
+  @@index([taskId])
+  @@index([agentRunId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model AgentToolCall {
+  id          String     @id @default(uuid())
+  agentRunId  String
+  run         AgentRun   @relation(fields: [agentRunId], references: [id], onDelete: Cascade)
+  agentStepId String?
+  step        AgentStep? @relation(fields: [agentStepId], references: [id], onDelete: SetNull)
+  toolName    String
+  input       Json?
+  output      Json?
+  status      String     @default("completed") // pending, running, completed, failed
+  durationMs  Int?
+  error       String?    @db.Text
+  createdAt   DateTime   @default(now())
+
+  @@index([agentRunId])
+  @@index([agentStepId])
+  @@index([toolName])
+}
+
+model AgentObservation {
+  id            String     @id @default(uuid())
+  agentRunId    String
+  run           AgentRun   @relation(fields: [agentRunId], references: [id], onDelete: Cascade)
+  agentStepId   String?
+  step          AgentStep? @relation(fields: [agentStepId], references: [id], onDelete: SetNull)
+  url           String?
+  title         String?
+  summary       String?    @db.Text
+  extractedData Json?
+  metadata      Json?
+  createdAt     DateTime   @default(now())
+
+  @@index([agentRunId])
+  @@index([agentStepId])
+}
+
+model AgentArtifact {
+  id          String   @id @default(uuid())
+  agentRunId  String
+  run         AgentRun @relation(fields: [agentRunId], references: [id], onDelete: Cascade)
+  type        String   // report, document, research, url, file, memory, task, workflow
+  name        String
+  location    String?
+  content     String?  @db.Text
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([agentRunId])
+  @@index([type])
+}
+
+// ============================================================
+// NEXUS MEMORY — Full Production Schema
+// ============================================================
+
+model Memory {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId     String?
+  workspace       Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // Classification
+  type            String    @default("FACT")   // MemoryType enum values
+  category        String?
+  title           String    @default("")
+  key             String    @default("")        // Legacy compat
+
+  // Content
+  summary         String?   @db.Text
+  content         String    @db.Text
+  metadata        Json?
+
+  // Scoring
+  importanceScore Float     @default(0.5)
+  confidenceScore Float     @default(0.8)
+  importance      Float     @default(1.0)      // Legacy compat
+
+  // Status
+  status          String    @default("ACTIVE") // CANDIDATE | ACTIVE | PINNED | ARCHIVED | DELETED
+  isPinned        Boolean   @default(false)
+  isUserVerified  Boolean   @default(false)
+
+  // Provenance
+  sourceCount     Int       @default(0)
+  accessCount     Int       @default(0)
+
+  // Embedding lifecycle
+  embeddingStatus String    @default("PENDING") // PENDING | PROCESSING | READY | FAILED
+
+  // Soft delete
+  archivedAt      DateTime?
+  deletedAt       DateTime?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  lastAccessedAt  DateTime?
+
+  // Relations
+  chunks          MemoryChunk[]
+  embeddings      MemoryEmbedding[]
+  sources         MemorySource[]
+  outgoingRelations MemoryRelation[] @relation("MemoryRelationSource")
+  incomingRelations MemoryRelation[] @relation("MemoryRelationTarget")
+  collectionItems MemoryCollectionItem[]
+  tagRelations    MemoryTagRelation[]
+  events          MemoryEvent[]
+  notes           MemoryNote[]
+  suggestions     MemorySuggestion[]
+  accessLog       MemoryAccess[]
+
+  @@index([userId])
+  @@index([workspaceId])
+  @@index([key])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@index([importanceScore])
+  @@index([userId, workspaceId])
+  @@index([workspaceId, status])
+  @@index([workspaceId, updatedAt])
+}
+
+model MemoryChunk {
+  id         String   @id @default(uuid())
+  memoryId   String
+  memory     Memory   @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+  chunkIndex Int      @default(0)
+  content    String   @db.Text
+  tokenCount Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  embeddings MemoryEmbedding[]
+
+  @@index([memoryId])
+  @@index([chunkIndex])
+}
+
+model MemoryEmbedding {
+  id        String       @id @default(uuid())
+  memoryId  String
+  memory    Memory       @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+  chunkId   String?
+  chunk     MemoryChunk? @relation(fields: [chunkId], references: [id], onDelete: Cascade)
+  model     String       @default("nomic-embed-text")
+  vector    Json         // Float[] stored as JSON (pgvector upgrade path)
+  dims      Int          @default(768)
+  createdAt DateTime     @default(now())
+
+  @@index([memoryId])
+  @@index([chunkId])
+}
+
+model MemorySource {
+  id           String   @id @default(uuid())
+  memoryId     String
+  memory       Memory   @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+  url          String?
+  title        String
+  domain       String?
+  author       String?
+  publishedAt  DateTime?
+  retrievedAt  DateTime @default(now())
+  sourceType   String   @default("WEB") // WEB | PAPER | DOCUMENT | VIDEO | CHAT | AGENT | USER_NOTE
+  summary      String?  @db.Text
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  @@index([memoryId])
+  @@index([sourceType])
+  @@index([createdAt])
+}
+
+model MemoryRelation {
+  id           String   @id @default(uuid())
+  sourceId     String
+  source       Memory   @relation("MemoryRelationSource", fields: [sourceId], references: [id], onDelete: Cascade)
+  targetId     String
+  target       Memory   @relation("MemoryRelationTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  relationType String   @default("RELATED_TO") // RELATED_TO | MENTIONS | DERIVED_FROM | BELONGS_TO | SUPPORTS | CONTRADICTS | SAME_TOPIC | SAME_PROJECT | SAME_SOURCE | CREATED_FROM | UPDATED_FROM
+  strength     Float    @default(0.5)
+  confidence   Float    @default(0.8)
+  isAutomatic  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  @@unique([sourceId, targetId, relationType])
+  @@index([sourceId])
+  @@index([targetId])
+  @@index([relationType])
+}
+
+model MemoryCollection {
+  id          String   @id @default(uuid())
+  userId      String
+  workspaceId String?
+  name        String
+  description String?  @db.Text
+  color       String?  @default("#6366f1")
+  icon        String?  @default("folder")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items       MemoryCollectionItem[]
+
+  @@index([userId])
+  @@index([workspaceId])
+}
+
+model MemoryCollectionItem {
+  id           String           @id @default(uuid())
+  collectionId String
+  collection   MemoryCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  memoryId     String
+  memory       Memory           @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+  addedAt      DateTime         @default(now())
+
+  @@unique([collectionId, memoryId])
+  @@index([collectionId])
+  @@index([memoryId])
+}
+
+model MemoryTag {
+  id        String              @id @default(uuid())
+  name      String              @unique
+  color     String?
+  createdAt DateTime            @default(now())
+
+  relations MemoryTagRelation[]
+}
+
+model MemoryTagRelation {
+  id       String    @id @default(uuid())
+  memoryId String
+  memory   Memory    @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+  tagId    String
+  tag      MemoryTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([memoryId, tagId])
+  @@index([memoryId])
+  @@index([tagId])
+}
+
+model MemoryEvent {
+  id        String   @id @default(uuid())
+  memoryId  String?
+  memory    Memory?  @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+  userId    String
+  workspaceId String?
+  eventType String   // MEMORY_CREATED | MEMORY_UPDATED | MEMORY_VIEWED | MEMORY_VERIFIED | MEMORY_ARCHIVED | RESEARCH_SAVED | AGENT_RESULT_SAVED | SOURCE_ADDED | NOTE_ADDED | RELATION_CREATED
+  title     String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([memoryId])
+  @@index([userId])
+  @@index([workspaceId])
+  @@index([eventType])
+  @@index([createdAt])
+}
+
+model MemoryNote {
+  id        String   @id @default(uuid())
+  memoryId  String
+  memory    Memory   @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+  content   String   @db.Text
+  isAI      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([memoryId])
+}
+
+model MemoryAccess {
+  id        String   @id @default(uuid())
+  memoryId  String
+  memory    Memory   @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+  userId    String
+  source    String   @default("USER") // USER | ASSISTANT | RESEARCH | AGENT
+  createdAt DateTime @default(now())
+
+  @@index([memoryId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model MemorySuggestion {
+  id         String   @id @default(uuid())
+  memoryId   String?
+  memory     Memory?  @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+  userId     String
+  workspaceId String?
+  type       String   // CONNECT | MERGE | REVIEW | VERIFY | UPDATE | MISSING_RELATION | CONTRADICTION | STALE
+  title      String
+  description String  @db.Text
+  metadata   Json?
+  isDismissed Boolean @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([workspaceId])
+  @@index([memoryId])
+  @@index([isDismissed])
+}
+
+model ResearchProject {
+  id          String           @id @default(uuid())
+  userId      String?
+  user        User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  workspaceId String
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  spaceId     String?
+  name        String
+  title       String?
+  question    String           @db.Text
+  mode        String           @default("standard") // quick, standard, deep
+  status      String           @default("in_progress") // in_progress, completed, paused, failed, cancelled
+  finalReport String?          @db.Text
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  runs        ResearchRun[]
+  plans       ResearchPlan[]
+  sources     ResearchSource[]
+  evidence    EvidenceItem[]
+  findings    ResearchFinding[]
+  reports     ResearchReport[]
+  citations   ResearchCitation[]
+  notes       ResearchNote[]
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ResearchRun {
+  id                String          @id @default(uuid())
+  researchProjectId String
+  project           ResearchProject @relation(fields: [researchProjectId], references: [id], onDelete: Cascade)
+  status            String          @default("queued") // queued, planning, searching, extracting, analyzing, synthesizing, completed, paused, cancelled, failed
+  progress          Float           @default(0)
+  startedAt         DateTime        @default(now())
+  completedAt       DateTime?
+  error             String?         @db.Text
+  metadata          Json?
+
+  @@index([researchProjectId])
+  @@index([status])
+  @@index([startedAt])
+}
+
+model ResearchPlan {
+  id                String          @id @default(uuid())
+  researchProjectId String
+  project           ResearchProject @relation(fields: [researchProjectId], references: [id], onDelete: Cascade)
+  objectives        Json            // array of { id, title, status, order }
+  status            String          @default("active")
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([researchProjectId])
+  @@index([createdAt])
+}
+
+model ResearchSource {
+  id                String             @id @default(uuid())
+  researchProjectId String
+  project           ResearchProject    @relation(fields: [researchProjectId], references: [id], onDelete: Cascade)
+  url               String
+  title             String
+  domain            String?
+  sourceType        String             @default("web") // web, paper, docs, github, news
+  status            String             @default("completed") // discovered, queued, fetching, extracting, analyzing, completed, failed
+  content           String?            @db.Text
+  summary           String?            @db.Text
+  contentHash       String?
+  retrievedAt       DateTime           @default(now())
+  metadata          Json?
+  createdAt         DateTime           @default(now())
+
+  evidence          EvidenceItem[]
+  citations         ResearchCitation[]
+
+  @@index([researchProjectId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model EvidenceItem {
+  id                String             @id @default(uuid())
+  researchProjectId String
+  project           ResearchProject    @relation(fields: [researchProjectId], references: [id], onDelete: Cascade)
+  sourceId          String
+  source            ResearchSource     @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  claim             String             @db.Text
+  evidenceText      String             @db.Text
+  location          String?
+  metadata          Json?
+  createdAt         DateTime           @default(now())
+
+  citations         ResearchCitation[]
+
+  @@index([researchProjectId])
+  @@index([sourceId])
+  @@index([createdAt])
+}
+
+model ResearchFinding {
+  id                String             @id @default(uuid())
+  researchProjectId String
+  project           ResearchProject    @relation(fields: [researchProjectId], references: [id], onDelete: Cascade)
+  title             String
+  summary           String             @db.Text
+  claim             String             @db.Text
+  confidence        Float              @default(0.85)
+  status            String             @default("SUPPORTED") // SUPPORTED, PARTIALLY_SUPPORTED, CONFLICTING, UNSUPPORTED
+  metadata          Json?
+  createdAt         DateTime           @default(now())
+
+  citations         ResearchCitation[]
+
+  @@index([researchProjectId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ResearchReport {
+  id                String          @id @default(uuid())
+  researchProjectId String
+  project           ResearchProject @relation(fields: [researchProjectId], references: [id], onDelete: Cascade)
+  title             String
+  summary           String          @db.Text
+  sections          Json            // array of { id, heading, content, citations }
+  status            String          @default("final")
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([researchProjectId])
+  @@index([createdAt])
+}
+
+model ResearchCitation {
+  id                String           @id @default(uuid())
+  researchProjectId String
+  project           ResearchProject  @relation(fields: [researchProjectId], references: [id], onDelete: Cascade)
+  sourceId          String
+  source            ResearchSource   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  evidenceId        String?
+  evidence          EvidenceItem?    @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  findingId         String?
+  finding           ResearchFinding? @relation(fields: [findingId], references: [id], onDelete: Cascade)
+  inlineIndex       Int              @default(1)
+  claim             String?          @db.Text
+  metadata          Json?
+  createdAt         DateTime         @default(now())
+
+  @@index([researchProjectId])
+  @@index([sourceId])
+  @@index([evidenceId])
+  @@index([findingId])
+}
+
+model ResearchNote {
+  id                String          @id @default(uuid())
+  researchProjectId String
+  project           ResearchProject @relation(fields: [researchProjectId], references: [id], onDelete: Cascade)
+  content           String          @db.Text
+  metadata          Json?
+  createdAt         DateTime        @default(now())
+
+  @@index([researchProjectId])
+  @@index([createdAt])
+}
+
+
+model Workflow {
+  id          String              @id @default(uuid())
+  workspaceId String
+  workspace   Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  description String?             @db.Text
+  definition  Json
+  status      String              @default("active")
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  executions  WorkflowExecution[]
+
+  @@index([workspaceId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model WorkflowExecution {
+  id          String                  @id @default(uuid())
+  workflowId  String
+  workflow    Workflow                @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  status      String                  @default("running")
+  input       Json?
+  output      Json?
+  startedAt   DateTime                @default(now())
+  completedAt DateTime?
+
+  steps       WorkflowStepExecution[]
+
+  @@index([workflowId])
+  @@index([status])
+  @@index([startedAt])
+}
+
+model WorkflowStepExecution {
+  id          String            @id @default(uuid())
+  executionId String
+  execution   WorkflowExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  stepId      String
+  status      String            @default("pending")
+  input       Json?
+  output      Json?
+  error       String?           @db.Text
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  @@index([executionId])
+  @@index([status])
+}
+
+model Skill {
+  id           String     @id @default(uuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId  String?
+  workspace    Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name         String
+  description  String     @db.Text
+  instructions String     @db.Text
+  tools        Json?
+  permissions  Json?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([workspaceId])
+  @@index([createdAt])
+}
+
+model ApprovalRequest {
+  id          String     @id @default(uuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId String
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  taskId      String?
+  task        AgentTask? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  agentRunId  String?
+  agentRun    AgentRun?  @relation(fields: [agentRunId], references: [id], onDelete: SetNull)
+  action      String
+  target      String
+  details     Json?
+  status      String     @default("pending")
+  createdAt   DateTime   @default(now())
+  resolvedAt  DateTime?
+
+  @@index([userId])
+  @@index([workspaceId])
+  @@index([taskId])
+  @@index([agentRunId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ActivityEvent {
+  id          String     @id @default(uuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId String?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  taskId      String?
+  task        AgentTask? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  agentRunId  String?
+  type        String
+  message     String     @db.Text
+  metadata    Json?
+  createdAt   DateTime   @default(now())
+
+  @@index([userId])
+  @@index([workspaceId])
+  @@index([taskId])
+  @@index([agentRunId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  message   String   @db.Text
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+}
+
+model AIProviderConfig {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider        String
+  model           String
+  baseUrl         String?
+  encryptedConfig String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([provider])
+}
+
+model UserPreference {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key       String
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, key])
+  @@index([userId])
+}

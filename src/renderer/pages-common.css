@@ -1,0 +1,109 @@
+@import "tailwindcss";
+@config "../../tailwind.config.cjs";
+@plugin "@tailwindcss/typography";
+
+/* ── Chrome-style base ── */
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  * {
+    @apply box-border;
+  }
+
+  html,
+  body {
+    min-height: 100%;
+  }
+
+  body {
+    @apply m-0 font-sans antialiased;
+    background: #202124;
+    color: #e8eaed;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    @apply font-sans;
+  }
+
+  [data-theme="light"] {
+    color-scheme: light;
+  }
+
+  [data-theme="light"] body {
+    background: #f8f9fa;
+    color: #202124;
+  }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 16px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #5f6368;
+  border-radius: 8px;
+  border: 4px solid #202124;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #9aa0a6;
+}
+
+[data-theme="light"] .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #dadce0;
+  border: 4px solid #f8f9fa;
+}
+
+[data-theme="light"] .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #bdc1c6;
+}
+
+@layer components {
+  .page-toast-host {
+    @apply pointer-events-none fixed bottom-6 right-6 z-50;
+    max-width: min(420px, calc(100vw - 32px));
+  }
+
+  .page-toast {
+    @apply rounded-2xl border px-4 py-3 text-[13px] shadow-lg backdrop-blur;
+    background: rgba(32, 33, 36, 0.95);
+    color: #e8eaed;
+    border-color: #3c4043;
+  }
+
+  .page-toast.ok {
+    color: #86efac;
+    border-color: rgba(74, 222, 128, 0.3);
+  }
+
+  .page-toast.err {
+    color: #fda4af;
+    border-color: rgba(244, 114, 182, 0.3);
+  }
+
+  [data-theme="light"] .page-toast {
+    background: rgba(255, 255, 255, 0.96);
+    color: #202124;
+    border-color: #dadce0;
+  }
+
+  [data-theme="light"] .page-toast.ok {
+    color: #047857;
+    border-color: #bbf7d0;
+  }
+
+  [data-theme="light"] .page-toast.err {
+    color: #be123c;
+    border-color: #fecdd3;
+  }
+}

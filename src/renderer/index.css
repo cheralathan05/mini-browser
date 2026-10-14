@@ -1,0 +1,548 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+@config "../../tailwind.config.cjs";
+@plugin "@tailwindcss/typography";
+
+/* ============================================================
+   NEXUS DESIGN SYSTEM v3.0 — Premium Token Layer
+   ============================================================ */
+:root {
+  /* Color Palette */
+  --nx-bg-void: #02020a;
+  --nx-bg-deep: #050510;
+  --nx-bg-base: #080818;
+  --nx-bg-elevated: #0d0d22;
+  --nx-bg-card: rgba(255,255,255,0.03);
+  --nx-bg-glass: rgba(255,255,255,0.05);
+  --nx-bg-hover: rgba(255,255,255,0.07);
+
+  --nx-border-subtle: rgba(255,255,255,0.06);
+  --nx-border-default: rgba(255,255,255,0.09);
+  --nx-border-accent: rgba(99,102,241,0.4);
+
+  --nx-text-primary: #f1f1ff;
+  --nx-text-secondary: #a0a0c0;
+  --nx-text-muted: #606080;
+  --nx-text-dim: #3a3a5a;
+
+  --nx-accent-violet: #7c3aed;
+  --nx-accent-indigo: #4f46e5;
+  --nx-accent-cyan: #06b6d4;
+  --nx-accent-emerald: #10b981;
+  --nx-accent-amber: #f59e0b;
+  --nx-accent-rose: #f43f5e;
+  --nx-accent-blue: #3b82f6;
+
+  /* Glow Effects */
+  --nx-glow-violet: 0 0 40px rgba(124,58,237,0.25);
+  --nx-glow-indigo: 0 0 40px rgba(79,70,229,0.25);
+  --nx-glow-cyan: 0 0 40px rgba(6,182,212,0.20);
+
+  /* Spacing */
+  --nx-radius-sm: 8px;
+  --nx-radius-md: 12px;
+  --nx-radius-lg: 16px;
+  --nx-radius-xl: 20px;
+
+  /* Animation */
+  --nx-transition-fast: 150ms cubic-bezier(0.4,0,0.2,1);
+  --nx-transition-base: 250ms cubic-bezier(0.4,0,0.2,1);
+  --nx-transition-slow: 400ms cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ============================================================
+   BASE RESET & GLOBAL
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: var(--nx-bg-void);
+  color: var(--nx-text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+#root { width: 100%; height: 100%; display: flex; flex-direction: column; }
+
+::selection {
+  background: rgba(124,58,237,0.35);
+  color: #e2d9ff;
+}
+
+/* ============================================================
+   CUSTOM SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.10);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.20);
+}
+* { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.10) transparent; }
+
+/* ============================================================
+   KEYFRAME ANIMATIONS
+   ============================================================ */
+@keyframes nx-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes nx-slide-in-right {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes nx-slide-in-left {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes nx-scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes nx-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes nx-pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(124,58,237,0.5); }
+  70%  { box-shadow: 0 0 0 10px rgba(124,58,237,0); }
+  100% { box-shadow: 0 0 0 0 rgba(124,58,237,0); }
+}
+
+@keyframes nx-spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes nx-orb-float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%       { transform: translateY(-20px) scale(1.05); }
+}
+
+@keyframes nx-gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
+
+@keyframes nx-blink-cursor {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@keyframes nx-count-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes nx-ripple {
+  0%   { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+@keyframes nx-slide-up {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes nx-dot-bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40%           { transform: scale(1); }
+}
+
+@keyframes nx-glow-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
+}
+
+/* ============================================================
+   UTILITY ANIMATION CLASSES
+   ============================================================ */
+.nx-fade-in  { animation: nx-fade-in var(--nx-transition-base) both; }
+.nx-slide-right { animation: nx-slide-in-right var(--nx-transition-base) both; }
+.nx-slide-left  { animation: nx-slide-in-left var(--nx-transition-base) both; }
+.nx-scale-in    { animation: nx-scale-in var(--nx-transition-fast) both; }
+.nx-slide-up    { animation: nx-slide-up var(--nx-transition-base) both; }
+
+/* Staggered children */
+.nx-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.nx-stagger > *:nth-child(2) { animation-delay: 60ms; }
+.nx-stagger > *:nth-child(3) { animation-delay: 120ms; }
+.nx-stagger > *:nth-child(4) { animation-delay: 180ms; }
+.nx-stagger > *:nth-child(5) { animation-delay: 240ms; }
+.nx-stagger > *:nth-child(6) { animation-delay: 300ms; }
+
+/* ============================================================
+   GLASS MORPHISM CARDS
+   ============================================================ */
+.nx-glass {
+  background: var(--nx-bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--nx-border-default);
+}
+
+.nx-glass-elevated {
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+/* ============================================================
+   GRADIENT TEXT
+   ============================================================ */
+.nx-gradient-text {
+  background: linear-gradient(135deg, #a78bfa, #60a5fa, #34d399);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: nx-gradient-shift 4s ease infinite;
+}
+
+.nx-gradient-text-violet {
+  background: linear-gradient(135deg, #c4b5fd, #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================================
+   LOADING SKELETON
+   ============================================================ */
+.nx-skeleton {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.04) 0%,
+    rgba(255,255,255,0.09) 50%,
+    rgba(255,255,255,0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: nx-shimmer 1.8s ease-in-out infinite;
+  border-radius: var(--nx-radius-sm);
+}
+
+/* ============================================================
+   TYPING DOTS
+   ============================================================ */
+.nx-typing-dot {
+  width: 6px; height: 6px;
+  background: var(--nx-accent-violet);
+  border-radius: 50%;
+  display: inline-block;
+  animation: nx-dot-bounce 1.4s ease-in-out infinite both;
+}
+.nx-typing-dot:nth-child(1) { animation-delay: 0ms; }
+.nx-typing-dot:nth-child(2) { animation-delay: 160ms; }
+.nx-typing-dot:nth-child(3) { animation-delay: 320ms; }
+
+/* ============================================================
+   CURSOR BLINK
+   ============================================================ */
+.nx-cursor::after {
+  content: '▋';
+  animation: nx-blink-cursor 0.8s step-end infinite;
+  color: var(--nx-accent-violet);
+  margin-left: 2px;
+}
+
+/* ============================================================
+   STATUS DOTS
+   ============================================================ */
+.nx-status-online {
+  width: 8px; height: 8px;
+  background: var(--nx-accent-emerald);
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 rgba(16,185,129,0.7);
+  animation: nx-pulse-ring 2s ease-out infinite;
+}
+
+.nx-status-offline {
+  width: 8px; height: 8px;
+  background: var(--nx-accent-rose);
+  border-radius: 50%;
+  animation: nx-glow-pulse 2s ease-in-out infinite;
+}
+
+/* ============================================================
+   NEXUS AMBIENT ORB BACKGROUNDS
+   ============================================================ */
+.nx-orb {
+  pointer-events: none;
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.12;
+  animation: nx-orb-float 8s ease-in-out infinite;
+}
+
+.nx-orb-violet { background: radial-gradient(circle, #7c3aed 0%, transparent 70%); }
+.nx-orb-cyan   { background: radial-gradient(circle, #06b6d4 0%, transparent 70%); }
+.nx-orb-indigo { background: radial-gradient(circle, #4f46e5 0%, transparent 70%); }
+
+/* ============================================================
+   STAT CARD COUNT-UP
+   ============================================================ */
+.nx-stat-value {
+  animation: nx-count-up 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+/* ============================================================
+   BUTTON VARIANTS
+   ============================================================ */
+.nx-btn-primary {
+  background: linear-gradient(135deg, #6d28d9, #4f46e5);
+  border: 1px solid rgba(124,58,237,0.4);
+  box-shadow: 0 4px 24px rgba(109,40,217,0.35), inset 0 1px 0 rgba(255,255,255,0.12);
+  color: #fff;
+  font-weight: 600;
+  transition: all var(--nx-transition-fast);
+  cursor: pointer;
+}
+.nx-btn-primary:hover {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  box-shadow: 0 6px 32px rgba(109,40,217,0.5), inset 0 1px 0 rgba(255,255,255,0.16);
+  transform: translateY(-1px);
+}
+.nx-btn-primary:active { transform: translateY(0); }
+
+.nx-btn-ghost {
+  background: var(--nx-bg-glass);
+  border: 1px solid var(--nx-border-default);
+  color: var(--nx-text-secondary);
+  transition: all var(--nx-transition-fast);
+  cursor: pointer;
+}
+.nx-btn-ghost:hover {
+  background: var(--nx-bg-hover);
+  border-color: var(--nx-border-accent);
+  color: var(--nx-text-primary);
+}
+
+/* ============================================================
+   INPUT FIELDS
+   ============================================================ */
+.nx-input {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--nx-border-default);
+  color: var(--nx-text-primary);
+  transition: all var(--nx-transition-fast);
+  outline: none;
+}
+.nx-input::placeholder { color: var(--nx-text-muted); }
+.nx-input:focus {
+  border-color: rgba(99,102,241,0.6);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.12), 0 0 20px rgba(99,102,241,0.08);
+  background: rgba(255,255,255,0.06);
+}
+
+/* ============================================================
+   PROGRESS BARS
+   ============================================================ */
+.nx-progress-track {
+  background: rgba(255,255,255,0.07);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.nx-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--nx-accent-violet), var(--nx-accent-cyan));
+  box-shadow: 0 0 12px rgba(124,58,237,0.5);
+  transition: width var(--nx-transition-slow);
+  position: relative;
+}
+.nx-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 40px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4));
+  animation: nx-shimmer 1.5s ease-in-out infinite;
+}
+
+/* ============================================================
+   TAGS / BADGES
+   ============================================================ */
+.nx-badge {
+  display: inline-flex; align-items: center;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.05em;
+  padding: 2px 8px; border-radius: 999px;
+  text-transform: uppercase;
+}
+.nx-badge-violet { background: rgba(124,58,237,0.2); color: #c4b5fd; border: 1px solid rgba(124,58,237,0.3); }
+.nx-badge-emerald { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.25); }
+.nx-badge-amber { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.25); }
+.nx-badge-rose { background: rgba(244,63,94,0.15); color: #fda4af; border: 1px solid rgba(244,63,94,0.25); }
+.nx-badge-cyan { background: rgba(6,182,212,0.15); color: #67e8f9; border: 1px solid rgba(6,182,212,0.25); }
+.nx-badge-blue { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.25); }
+
+/* ============================================================
+   MODAL OVERLAY
+   ============================================================ */
+.nx-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  animation: nx-fade-in 150ms both;
+}
+
+.nx-modal {
+  animation: nx-scale-in 200ms cubic-bezier(0.34,1.56,0.64,1) both;
+  background: #0d0d1f;
+  border: 1px solid var(--nx-border-default);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05);
+}
+
+/* ============================================================
+   MARKDOWN CONTENT
+   ============================================================ */
+.nx-markdown { line-height: 1.75; font-size: 13.5px; color: var(--nx-text-secondary); }
+.nx-markdown h1, .nx-markdown h2, .nx-markdown h3 { color: var(--nx-text-primary); font-weight: 700; margin-top: 1.5em; }
+.nx-markdown h1 { font-size: 1.4em; }
+.nx-markdown h2 { font-size: 1.2em; }
+.nx-markdown h3 { font-size: 1.05em; }
+.nx-markdown code {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #c4b5fd;
+}
+.nx-markdown pre {
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 16px;
+  overflow-x: auto;
+}
+.nx-markdown pre code { background: none; border: none; padding: 0; }
+.nx-markdown a { color: #818cf8; text-decoration: underline; }
+.nx-markdown blockquote {
+  border-left: 3px solid rgba(124,58,237,0.5);
+  padding-left: 1em;
+  margin-left: 0;
+  color: var(--nx-text-muted);
+}
+.nx-markdown table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.nx-markdown th { background: rgba(255,255,255,0.06); color: var(--nx-text-primary); font-weight: 600; padding: 8px 12px; border: 1px solid var(--nx-border-default); }
+.nx-markdown td { padding: 7px 12px; border: 1px solid rgba(255,255,255,0.05); color: var(--nx-text-secondary); }
+.nx-markdown tr:hover td { background: rgba(255,255,255,0.03); }
+
+/* ============================================================
+   TOAST NOTIFICATIONS
+   ============================================================ */
+.nx-toast {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--nx-border-default);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  animation: nx-slide-in-right 300ms cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+.nx-tab-active {
+  background: rgba(99,102,241,0.2);
+  color: #a5b4fc;
+  border-bottom: 2px solid #6366f1;
+}
+.nx-tab-inactive {
+  color: var(--nx-text-muted);
+  border-bottom: 2px solid transparent;
+}
+.nx-tab-inactive:hover {
+  color: var(--nx-text-secondary);
+  background: rgba(255,255,255,0.04);
+}
+
+/* ============================================================
+   BROWSER TAB STYLES
+   ============================================================ */
+.nx-browser-tab {
+  transition: all var(--nx-transition-fast);
+}
+.nx-browser-tab:hover {
+  background: rgba(255,255,255,0.06);
+}
+.nx-browser-tab.active {
+  background: rgba(99,102,241,0.15);
+  border-bottom: 2px solid #6366f1;
+}
+
+/* ============================================================
+   NODE CARDS (Workflows Canvas)
+   ============================================================ */
+.nx-node-trigger  { border-color: rgba(16,185,129,0.4); box-shadow: 0 0 20px rgba(16,185,129,0.1); }
+.nx-node-search   { border-color: rgba(59,130,246,0.4); box-shadow: 0 0 20px rgba(59,130,246,0.1); }
+.nx-node-browser  { border-color: rgba(6,182,212,0.4); box-shadow: 0 0 20px rgba(6,182,212,0.1); }
+.nx-node-ai       { border-color: rgba(124,58,237,0.4); box-shadow: 0 0 20px rgba(124,58,237,0.1); }
+.nx-node-database { border-color: rgba(245,158,11,0.4); box-shadow: 0 0 20px rgba(245,158,11,0.1); }
+.nx-node-condition { border-color: rgba(244,63,94,0.4); box-shadow: 0 0 20px rgba(244,63,94,0.1); }
+.nx-node-approval { border-color: rgba(251,146,60,0.4); box-shadow: 0 0 20px rgba(251,146,60,0.1); }
+.nx-node-output   { border-color: rgba(167,139,250,0.4); box-shadow: 0 0 20px rgba(167,139,250,0.1); }
+
+/* ============================================================
+   PANEL RESIZE HANDLE
+   ============================================================ */
+.nx-resize-handle {
+  width: 4px;
+  background: transparent;
+  cursor: col-resize;
+  transition: background var(--nx-transition-fast);
+}
+.nx-resize-handle:hover { background: rgba(99,102,241,0.4); }
+
+/* ============================================================
+   SCREENSHOT PREVIEW
+   ============================================================ */
+.nx-screenshot-canvas {
+  border: 2px solid var(--nx-accent-violet);
+  box-shadow: var(--nx-glow-violet), 0 0 0 4px rgba(124,58,237,0.1);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* ============================================================
+   MISC HELPERS
+   ============================================================ */
+.nx-divider {
+  border: none;
+  border-top: 1px solid var(--nx-border-subtle);
+}
+
+.nx-no-select { user-select: none; -webkit-user-select: none; }
+
+.nx-truncate {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.nx-hover-lift {
+  transition: transform var(--nx-transition-fast), box-shadow var(--nx-transition-fast);
+}
+.nx-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+}

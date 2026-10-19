@@ -6,7 +6,7 @@
   "main": "dist-electron/main.js",
   "type": "module",
   "engines": {
-    "node": ">=20.0.0"
+    "node": "20.x || 22.x"
   },
   "scripts": {
     "clean:dev": "powershell -ExecutionPolicy Bypass -File scripts/clean-dev.ps1",
@@ -20,10 +20,12 @@
     "build:backend": "node --stack-size=4096 ./node_modules/typescript/bin/tsc -p backend/tsconfig.json",
     "build:renderer": "vite build",
     "build:electron": "node scripts/build-electron.mjs",
-    "build": "npm run build:renderer && npm run build:electron && npm run build:backend",
+    "build": "npm run prisma:generate && npm run build:backend && npm run build:renderer",
+    "build:all": "npm run build:renderer && npm run build:electron && npm run build:backend",
     "build:render": "npm run prisma:generate && npm run build:backend && npm run build:renderer",
-    "start": "node dist-backend/server.js",
+    "start": "npm run prisma:push && node dist-backend/server.js",
     "start:render": "npm run prisma:push && node dist-backend/server.js",
+    "postinstall": "npm run prisma:generate",
     "typecheck": "node ./node_modules/typescript/bin/tsc --noEmit -p tsconfig.app.json && node ./node_modules/typescript/bin/tsc --noEmit -p tsconfig.electron.json && node ./node_modules/typescript/bin/tsc --noEmit -p backend/tsconfig.json",
     "test:unit": "node ./node_modules/typescript/bin/tsc -p tsconfig.tests.json && node --test tests/*.test.mjs",
     "test:backend": "cross-env NODE_ENV=test node ./node_modules/tsx/dist/cli.mjs --test backend/tests/backend.test.ts",

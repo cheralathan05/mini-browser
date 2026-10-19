@@ -4,10 +4,12 @@ services:
     runtime: node
     plan: free
     region: oregon
-    buildCommand: npm install && npm run build:render
+    buildCommand: npm install --include=dev && npm run build:render
     startCommand: npm run start:render
     healthCheckPath: /health
     envVars:
+      - key: NODE_VERSION
+        value: 20
       - key: NODE_ENV
         value: production
       - key: PORT

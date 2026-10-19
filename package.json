@@ -5,6 +5,9 @@
   "description": "Milo is an AI Native browser that turns tabs, context, automation, and local memory into one intelligent workspace.",
   "main": "dist-electron/main.js",
   "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "clean:dev": "powershell -ExecutionPolicy Bypass -File scripts/clean-dev.ps1",
     "predev": "npm run clean:dev && npm run db:start",

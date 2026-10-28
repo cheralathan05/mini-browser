@@ -413,6 +413,31 @@ router.post("/conversations/:id/retry", optionalAuth, async (req: RequestWithId,
   }
 });
 
+// 6b. PATCH /api/ai/conversations/:id - Rename or update conversation
+router.patch("/conversations/:id", optionalAuth, async (req: RequestWithId, res: Response, next: NextFunction) => {
+  try {
+    const { userId } = await resolveUserAndWorkspace(req);
+    const { title } = z.object({ title: z.string().min(1) }).parse(req.body);
+
+    const conversation = await prisma.conversation.findFirst({
+      where: { id: req.params.id, userId },
+    });
+
+    if (!conversation) {
+      throw new AppError("Conversation not found", 404, "NOT_FOUND");
+    }
+
+    const updated = await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: { title, updatedAt: new Date() },
+    });
+
+    res.json({ conversation: updated });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // 7. DELETE /api/ai/conversations/:id - Delete conversation
 router.delete("/conversations/:id", optionalAuth, async (req: RequestWithId, res: Response, next: NextFunction) => {
   try {

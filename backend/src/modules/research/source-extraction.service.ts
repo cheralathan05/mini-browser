@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { ExtractedSourceData } from "./research.types.js";
+import { CaptureService } from "../captures/capture.service.js";
 
 export interface ExtractionResult {
   success: boolean;
@@ -9,9 +10,10 @@ export interface ExtractionResult {
 
 export class SourceExtractionService {
   private static MAX_CONTENT_LENGTH = 8000;
+  private static MAX_RESPONSE_BYTES = 2 * 1024 * 1024; // 2MB limit
 
   /**
-   * Fetches and sanitizes real page content from an authoritative URL.
+   * Fetches and sanitizes real page content from an authoritative URL with strict SSRF guards.
    * Gracefully degrades to snippet synthesis if anti-bot challenges or networks prevent raw DOM fetch.
    */
   public static async extractSource(
@@ -20,6 +22,15 @@ export class SourceExtractionService {
     snippet?: string,
     signal?: AbortSignal
   ): Promise<ExtractionResult> {
+    // 0. Strict SSRF Guard & DNS Validation
+    const validation = await CaptureService.validateUrl(url);
+    if (!validation.valid) {
+      return {
+        success: false,
+        error: `SSRF Blocked: ${validation.error || "Destination host is not accessible"}`,
+      };
+    }
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
       controller.abort(new Error("Extraction timed out after 4s"));
@@ -35,14 +46,14 @@ export class SourceExtractionService {
     }
 
     try {
-      const parsedUrl = new URL(url);
+      const parsedUrl = new URL(validation.normalizedUrl);
       const domain = parsedUrl.hostname.replace(/^www\./, "");
 
       let html = "";
       let fetchSuccess = false;
 
       try {
-        const response = await fetch(url, {
+        const response = await fetch(validation.normalizedUrl, {
           headers: {
             "User-Agent":
               "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 NEXUS-Research/2.0",
@@ -53,8 +64,12 @@ export class SourceExtractionService {
         });
 
         if (response.ok) {
-          html = await response.text();
-          fetchSuccess = true;
+          const contentType = response.headers.get("content-type") || "";
+          if (contentType.includes("text/") || contentType.includes("application/xhtml") || contentType.includes("application/xml") || contentType.includes("json")) {
+            const rawText = await response.text();
+            html = rawText.slice(0, this.MAX_RESPONSE_BYTES);
+            fetchSuccess = true;
+          }
         }
       } catch {
         // Network fetch error or abort

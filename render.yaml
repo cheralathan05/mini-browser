@@ -21,13 +21,17 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: AI_PROVIDER
-        value: openai
+        value: auto
       - key: OPENAI_API_KEY
         sync: false
       - key: OPENAI_MODEL
         value: gpt-4o-mini
       - key: OPENAI_BASE_URL
         value: https://api.openai.com/v1
+      - key: ELECTRON_SKIP_BINARY_DOWNLOAD
+        value: "1"
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=460"
 
 databases:
   - name: milo-db

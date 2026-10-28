@@ -8,6 +8,7 @@ import { NexusWorkflowsView } from "./components/nexus/NexusWorkflowsView";
 import { NexusMemoryView } from "./components/nexus/NexusMemoryView";
 import { NexusSkillsView } from "./components/nexus/NexusSkillsView";
 import { NexusActivityView } from "./components/nexus/NexusActivityView";
+import { NexusApprovalsView } from "./components/nexus/NexusApprovalsView";
 import { NexusSettingsView } from "./components/nexus/NexusSettingsView";
 import { NexusApprovalsBanner } from "./components/nexus/NexusApprovalsBanner";
 import { NexusCommandPalette } from "./components/nexus/NexusCommandPalette";
@@ -17,6 +18,8 @@ import { NexusBookmarksView } from "./components/nexus/NexusBookmarksView";
 import { NexusHistoryView } from "./components/nexus/NexusHistoryView";
 import { NexusDownloadsView } from "./components/nexus/NexusDownloadsView";
 import { NexusExtensionsView } from "./components/nexus/NexusExtensionsView";
+import { NexusCodingWorkspaceView } from "./components/nexus/NexusCodingWorkspaceView";
+import { NexusPictureStudioView } from "./components/nexus/NexusPictureStudioView";
 import { nexusClient } from "./lib/nexus/nexus-client";
 import { nexusWs } from "./lib/nexus/nexus-ws";
 import { ShieldCheck } from "lucide-react";
@@ -190,6 +193,8 @@ export const NexusApp: React.FC = () => {
           isAnyModalOpen={showCommandPalette || showAuthModal}
         >
           {/* Workspaces rendered seamlessly when active */}
+          {activeTab === "coding" && <NexusCodingWorkspaceView workspaceId={activeWorkspaceId} onOpenInBrowser={openInBrowser} />}
+          {activeTab === "picture-studio" && <NexusPictureStudioView workspaceId={activeWorkspaceId} onOpenInBrowser={openInBrowser} />}
           {activeTab === "dashboard" && <NexusDashboard onNavigate={(tab) => setActiveTab(tab)} workspaceId={activeWorkspaceId} />}
           {activeTab === "agent" && <NexusAgentView onOpenInBrowser={openInBrowser} workspaceId={activeWorkspaceId} />}
           {activeTab === "research" && <NexusResearchView onOpenInBrowser={openInBrowser} workspaceId={activeWorkspaceId} />}
@@ -200,31 +205,12 @@ export const NexusApp: React.FC = () => {
           {activeTab === "settings" && <NexusSettingsView />}
           {activeTab === "bookmarks" && <NexusBookmarksView onOpenInBrowser={openInBrowser} />}
           {activeTab === "history" && <NexusHistoryView onOpenInBrowser={openInBrowser} />}
-          {activeTab === "downloads" && <NexusDownloadsView onOpenInBrowser={openInBrowser} />}
+          {activeTab === "downloads" && <NexusDownloadsView onOpenInBrowser={openInBrowser} workspaceId={activeWorkspaceId} />}
           {activeTab === "extensions" && <NexusExtensionsView onOpenInBrowser={openInBrowser} />}
 
           {/* Approvals Full View */}
           {activeTab === "approvals" && (
-            <div className="flex-1 flex flex-col p-8 bg-[#050507] text-neutral-100 overflow-y-auto">
-              <div className="max-w-3xl mx-auto w-full">
-                <div className="flex items-center gap-2 mb-2">
-                  <ShieldCheck className="w-6 h-6 text-amber-400" />
-                  <h1 className="text-xl font-bold text-white">Human-in-the-Loop Approvals Center</h1>
-                </div>
-                <p className="text-xs text-neutral-400 mb-8">
-                  Review and authorize sensitive autonomous agent actions including external form submissions, API mutations, and financial requests.
-                </p>
-
-                <NexusApprovalsBanner />
-
-                <div className="mt-8 p-6 rounded-2xl bg-neutral-900/40 border border-white/5 text-center">
-                  <p className="text-sm text-neutral-300 font-medium">Security & Safety Policy Active</p>
-                  <p className="text-xs text-neutral-500 mt-1 max-w-md mx-auto">
-                    All write-level tool calls and external navigation require explicit user authorization before execution.
-                  </p>
-                </div>
-              </div>
-            </div>
+            <NexusApprovalsView workspaceId={activeWorkspaceId || undefined} onOpenInBrowser={openInBrowser} />
           )}
         </NexusBrowserView>
 

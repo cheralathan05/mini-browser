@@ -13,6 +13,12 @@ import {
   Plus,
   ArrowRight,
   Command,
+  Code2,
+  Camera,
+  Bookmark,
+  History,
+  Download,
+  Puzzle,
 } from "lucide-react";
 import type { NexusTab } from "./NexusHeader";
 
@@ -36,19 +42,25 @@ export const NexusCommandPalette: React.FC<NexusCommandPaletteProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const items = [
-    { id: "browser", label: "Open Browser", category: "Navigation", icon: Globe, action: () => onNavigate("browser") },
-    { id: "dashboard", label: "Open Dashboard", category: "Navigation", icon: Command, action: () => onNavigate("dashboard") },
-    { id: "agent", label: "Open AI Agent Hub", category: "Navigation", icon: Bot, action: () => onNavigate("agent") },
-    { id: "research", label: "Open Deep Research", category: "Navigation", icon: Microscope, action: () => onNavigate("research") },
-    { id: "workflows", label: "Open Workflows", category: "Navigation", icon: Workflow, action: () => onNavigate("workflows") },
-    { id: "memory", label: "Open Persistent Memory", category: "Navigation", icon: Brain, action: () => onNavigate("memory") },
-    { id: "skills", label: "Open Skills Catalog", category: "Navigation", icon: Sparkles, action: () => onNavigate("skills") },
-    { id: "approvals", label: "Open Approvals Center", category: "Navigation", icon: ShieldCheck, action: () => onNavigate("approvals") },
-    { id: "activity", label: "Open Activity Log", category: "Navigation", icon: Activity, action: () => onNavigate("activity") },
-    { id: "settings", label: "Open Settings", category: "Navigation", icon: Settings, action: () => onNavigate("settings") },
-    { id: "ai_panel", label: "Toggle NEXUS Intelligence Panel", category: "Actions", icon: Sparkles, action: onToggleAiPanel },
-    { id: "new_research", label: "Initiate Deep Research Project", category: "Actions", icon: Microscope, action: () => onNavigate("research") },
-    { id: "new_workflow", label: "Create Automated Workflow", category: "Actions", icon: Workflow, action: () => onNavigate("workflows") },
+    { id: "browser", label: "Open Browser & Tabs", category: "Navigation", icon: Globe, action: () => onNavigate("browser") },
+    { id: "dashboard", label: "Open Mission Control Dashboard", category: "Navigation", icon: Command, action: () => onNavigate("dashboard") },
+    { id: "workflows", label: "Open Visual Workflow Builder & Automation", category: "Navigation", icon: Workflow, action: () => onNavigate("workflows") },
+    { id: "coding", label: "Open AI Coding Agent (Monaco IDE & Sandboxes)", category: "Navigation", icon: Code2, action: () => onNavigate("coding") },
+    { id: "picture-studio", label: "Open Picture Studio (Screenshots & Vision)", category: "Navigation", icon: Camera, action: () => onNavigate("picture-studio") },
+    { id: "agent", label: "Open Autonomous AI Missions Hub", category: "Navigation", icon: Bot, action: () => onNavigate("agent") },
+    { id: "research", label: "Open Deep Research Engine", category: "Navigation", icon: Microscope, action: () => onNavigate("research") },
+    { id: "memory", label: "Open Persistent Memory Vault", category: "Navigation", icon: Brain, action: () => onNavigate("memory") },
+    { id: "skills", label: "Open Skills Catalog & Runner", category: "Navigation", icon: Sparkles, action: () => onNavigate("skills") },
+    { id: "approvals", label: "Open Approvals Center & Security Policies", category: "Navigation", icon: ShieldCheck, action: () => onNavigate("approvals") },
+    { id: "activity", label: "Open Activity Timeline & Audit Logs", category: "Navigation", icon: Activity, action: () => onNavigate("activity") },
+    { id: "bookmarks", label: "Open Bookmarks Manager", category: "Navigation", icon: Bookmark, action: () => onNavigate("bookmarks") },
+    { id: "history", label: "Open Browsing History", category: "Navigation", icon: History, action: () => onNavigate("history") },
+    { id: "downloads", label: "Open Downloads Manager & AI File Inspector", category: "Navigation", icon: Download, action: () => onNavigate("downloads") },
+    { id: "extensions", label: "Open Extensions & Widgets", category: "Navigation", icon: Puzzle, action: () => onNavigate("extensions") },
+    { id: "settings", label: "Open Settings & AI Configuration", category: "Navigation", icon: Settings, action: () => onNavigate("settings") },
+    { id: "ai_panel", label: "Toggle NEXUS Intelligence Sidebar", category: "Actions", icon: Sparkles, action: onToggleAiPanel },
+    { id: "new_research", label: "Start Multi-Source Deep Research", category: "Actions", icon: Microscope, action: () => onNavigate("research") },
+    { id: "new_workflow", label: "Build New Node Automation Workflow", category: "Actions", icon: Workflow, action: () => onNavigate("workflows") },
   ];
 
   const filtered = items.filter(

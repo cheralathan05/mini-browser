@@ -1,14 +1,7 @@
 // NEXUS BROWSER - Production Full-Stack API Client
+import { getApiBase } from "./nexus-config";
 
-const API_BASE =
-  import.meta.env.VITE_NEXUS_API_URL ||
-  (typeof window !== "undefined" &&
-  window.location.origin &&
-  !window.location.protocol.startsWith("file") &&
-  !window.location.hostname.includes("localhost") &&
-  !window.location.hostname.includes("127.0.0.1")
-    ? window.location.origin
-    : "http://127.0.0.1:8001");
+const API_BASE = getApiBase();
 
 class NexusApiClient {
   private token: string | null = null;
@@ -599,15 +592,97 @@ class NexusApiClient {
 
 
 
-  // Settings
+  // Settings Center
   public async getSettings() {
-    return this.request<{ settings: any }>("/api/settings");
+    return this.request<{ settings: any }>("/api/v1/settings");
   }
 
   public async updateSettings(settings: any) {
-    return this.request<{ success: boolean }>("/api/settings", {
+    return this.request<{ success: boolean; message: string; updatedKeys?: string[] }>("/api/v1/settings", {
       method: "PATCH",
       body: JSON.stringify(settings),
+    });
+  }
+
+  public async getSettingsProfile() {
+    return this.request<{ user: any }>("/api/v1/settings/profile");
+  }
+
+  public async updateSettingsProfile(data: { name?: string; avatar?: string }) {
+    const res = await this.request<{ user: any; message: string }>("/api/v1/settings/profile", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+    if (res.user && typeof window !== "undefined") {
+      localStorage.setItem("nexus_user", JSON.stringify(res.user));
+    }
+    return res;
+  }
+
+  public async changeSettingsPassword(currentPassword: string, newPassword: string) {
+    return this.request<{ success: boolean; message: string }>("/api/v1/settings/password", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  }
+
+  public async getAIProviders() {
+    return this.request<{ providers: any[] }>("/api/v1/settings/ai-providers");
+  }
+
+  public async testAIProvider(data: { provider: "ollama" | "openai"; baseUrl?: string; model?: string; apiKey?: string }) {
+    return this.request<{
+      success: boolean;
+      status: string;
+      provider: string;
+      latencyMs: number;
+      targetUrl?: string;
+      availableModels?: string[];
+      activeModel?: string;
+      modelFound?: boolean;
+      message: string;
+      error?: string;
+    }>("/api/v1/settings/ai-providers/test", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  public async getSettingsIntegrations() {
+    return this.request<{ integrations: any[] }>("/api/v1/settings/integrations");
+  }
+
+  public async verifySettingsIntegration(id: string) {
+    return this.request<{ integration: any }>(`/api/v1/settings/integrations/${id}/verify`, {
+      method: "POST",
+    });
+  }
+
+  public async getSettingsSecurity() {
+    return this.request<{ security: any }>("/api/v1/settings/security");
+  }
+
+  public async testMessagesProvider(data: { provider: "whatsapp" | "email"; recipient?: string; smtpHost?: string; smtpPort?: number }) {
+    return this.request<{
+      success: boolean;
+      status: string;
+      provider: string;
+      latencyMs: number;
+      recipient?: string;
+      message: string;
+    }>("/api/v1/settings/messages/test", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  public async getSettingsDiagnostics() {
+    return this.request<{ diagnostics: any }>("/api/v1/settings/diagnostics");
+  }
+
+  public async runSettingsDiagnostics() {
+    return this.request<{ diagnostics: any }>("/api/v1/settings/diagnostics/run", {
+      method: "POST",
     });
   }
 

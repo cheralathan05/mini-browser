@@ -129,11 +129,29 @@ export class ResearchApiService {
     mode?: ResearchMode;
     workspaceId?: string;
     spaceId?: string;
+    sourcePreferences?: string[];
+    dateRange?: string;
+    exclusions?: string;
+    outputFormat?: string;
   }): Promise<FullResearchProject> {
     const res = await nexusClient.request<{ project: FullResearchProject }>("/api/research", {
       method: "POST",
       body: JSON.stringify(data),
     });
+    return res.project;
+  }
+
+  public static async updateProject(
+    id: string,
+    data: { name?: string; question?: string; title?: string }
+  ): Promise<FullResearchProject> {
+    const res = await nexusClient.request<{ success: boolean; project: FullResearchProject }>(
+      `/api/research/${id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }
+    );
     return res.project;
   }
 
@@ -212,5 +230,60 @@ export class ResearchApiService {
       method: "DELETE",
     });
     return res.success;
+  }
+
+  public static exportMarkdown(project: FullResearchProject): void {
+    const reportText = project.finalReport || `# ${project.name}\n\n${project.question}`;
+    const blob = new Blob([reportText], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const safeTitle = project.name.toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 40);
+    link.download = `nexus_research_${safeTitle}.md`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  public static exportJson(project: FullResearchProject): void {
+    const exportData = {
+      investigationId: project.id,
+      title: project.name,
+      question: project.question,
+      mode: project.mode,
+      status: project.status,
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt,
+      sourcesCount: project.sources?.length || 0,
+      evidenceCount: project.evidence?.length || 0,
+      findingsCount: project.findings?.length || 0,
+      report: project.finalReport,
+      sources: project.sources?.map((s) => ({
+        title: s.title,
+        url: s.url,
+        domain: s.domain,
+        sourceType: s.sourceType,
+        summary: s.summary,
+        retrievedAt: s.retrievedAt,
+      })),
+      findings: project.findings?.map((f) => ({
+        title: f.title,
+        summary: f.summary,
+        claim: f.claim,
+        confidence: f.confidence,
+        status: f.status,
+      })),
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const safeTitle = project.name.toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 40);
+    link.download = `nexus_research_${safeTitle}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 }

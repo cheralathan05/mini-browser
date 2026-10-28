@@ -519,6 +519,93 @@ export class ResearchOrchestrator {
         }
       }
 
+      // STEP 3b: DEEP MODE EVIDENCE GAP DETECTION & TARGETED FOLLOW-UP SEARCHES
+      if (mode === "deep" && !signal.aborted) {
+        this.broadcastProgress({
+          projectId,
+          runId,
+          status: "searching",
+          progress: 75,
+          elapsedSeconds: Math.floor((Date.now() - startTime) / 1000),
+          message: "Deep Mode: Detecting evidence gaps and launching targeted follow-up queries...",
+          sourceCount: extractedSources.length,
+          evidenceCount: extractedEvidence.length,
+        });
+
+        const followUpQueries = [
+          `${project.question} technical trade-offs benchmark comparison`,
+          `${project.question} edge cases failure modes limitations`,
+        ];
+
+        for (const fq of followUpQueries) {
+          if (signal.aborted) break;
+          const additionalSources = await SourceDiscoveryService.discoverSources(
+            fq,
+            { ...config, sourceLimit: 4 },
+            signal
+          );
+
+          for (const addSrc of additionalSources) {
+            if (savedSources.some((s) => s.url === addSrc.url)) continue;
+            const extraction = await SourceExtractionService.extractSource(
+              addSrc.url,
+              addSrc.title,
+              addSrc.snippet,
+              signal
+            );
+            if (extraction.success && extraction.data) {
+              const hash = extraction.data.contentHash;
+              const dbSrc = await prisma.researchSource.create({
+                data: {
+                  researchProjectId: projectId,
+                  url: addSrc.url,
+                  title: extraction.data.title,
+                  domain: extraction.data.domain,
+                  sourceType: extraction.data.sourceType,
+                  status: "completed",
+                  content: extraction.data.content,
+                  summary: extraction.data.summary,
+                  contentHash: hash,
+                },
+              }).catch(() => null);
+
+              if (dbSrc) {
+                savedSources.push(dbSrc);
+                extractedSources.push(extraction.data);
+
+                const additionalEvidence = await EvidenceService.extractEvidence(
+                  project.question,
+                  [extraction.data]
+                );
+                for (const ev of additionalEvidence) {
+                  extractedEvidence.push(ev);
+                  await prisma.evidenceItem.create({
+                    data: {
+                      researchProjectId: projectId,
+                      sourceId: dbSrc.id,
+                      claim: ev.claim,
+                      evidenceText: ev.evidenceText,
+                      location: ev.location,
+                    },
+                  }).catch(() => {});
+                }
+              }
+            }
+          }
+        }
+
+        this.broadcastProgress({
+          projectId,
+          runId,
+          status: "analyzing",
+          progress: 78,
+          elapsedSeconds: Math.floor((Date.now() - startTime) / 1000),
+          message: `Deep Mode: Integrated follow-up evidence. Sources: ${extractedSources.length}, claims: ${extractedEvidence.length}`,
+          sourceCount: extractedSources.length,
+          evidenceCount: extractedEvidence.length,
+        });
+      }
+
       // STEP 4: CROSS-SOURCE ANALYSIS & CONFLICT DETECTION (85% progress)
       await prisma.researchRun.update({ where: { id: runId }, data: { status: "analyzing", progress: 80 } }).catch(() => {});
       this.broadcastProgress({
@@ -565,7 +652,8 @@ export class ResearchOrchestrator {
         extractedSources,
         extractedEvidence,
         findings,
-        conflicts
+        conflicts,
+        mode
       );
       if (signal.aborted) return;
 

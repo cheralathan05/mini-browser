@@ -1,12 +1,6 @@
-const API_BASE =
-  import.meta.env.VITE_NEXUS_API_URL ||
-  (typeof window !== "undefined" &&
-  window.location.origin &&
-  !window.location.protocol.startsWith("file") &&
-  !window.location.hostname.includes("localhost") &&
-  !window.location.hostname.includes("127.0.0.1")
-    ? window.location.origin
-    : "http://127.0.0.1:8001");
+import { getApiBase } from "./nexus-config";
+
+const API_BASE = getApiBase();
 
 export interface AIConversationSummary {
   id: string;
@@ -115,6 +109,17 @@ class AskApiClient {
       body: JSON.stringify(opts),
     });
     if (!res.ok) throw new Error("Failed to create conversation");
+    const data = await res.json();
+    return data.conversation;
+  }
+
+  public async renameConversation(id: string, title: string): Promise<AIConversationDetail> {
+    const res = await fetch(`${API_BASE}/api/ai/conversations/${id}`, {
+      method: "PATCH",
+      headers: this.getHeaders(),
+      body: JSON.stringify({ title }),
+    });
+    if (!res.ok) throw new Error("Failed to rename conversation");
     const data = await res.json();
     return data.conversation;
   }

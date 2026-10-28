@@ -24,10 +24,22 @@ model User {
   memories          Memory[]
   skills            Skill[]
   approvals         ApprovalRequest[]
+  approvalPolicies  ApprovalPolicy[]
+  approvalDecisions ApprovalDecision[]
   activityEvents    ActivityEvent[]
   notifications     Notification[]
   aiProviderConfigs AIProviderConfig[]
   preferences       UserPreference[]
+  codingProjects    CodingProject[]
+  codeExecutions    CodeExecution[]
+  webCaptures       WebCapture[]
+  captureAnalyses   CaptureAnalysis[]
+  downloads         DownloadRecord[]
+  bookmarks         Bookmark[]
+  historyItems      BrowserHistoryItem[]
+  integrationConnections IntegrationConnection[]
+  workflows         Workflow[]
+  skillExecutions   SkillExecution[]
 
   @@index([email])
   @@index([createdAt])
@@ -64,7 +76,13 @@ model Workspace {
   memories         Memory[]
   skills           Skill[]
   approvals        ApprovalRequest[]
+  approvalPolicies ApprovalPolicy[]
   activityEvents   ActivityEvent[]
+  codingProjects   CodingProject[]
+  webCaptures      WebCapture[]
+  downloads        DownloadRecord[]
+  bookmarks        Bookmark[]
+  historyItems     BrowserHistoryItem[]
 
   @@index([userId])
   @@index([createdAt])
@@ -731,27 +749,49 @@ model Workflow {
   id          String              @id @default(uuid())
   workspaceId String
   workspace   Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
   name        String
   description String?             @db.Text
   definition  Json
-  status      String              @default("active")
+  status      String              @default("active") // active, draft, archived
+  version     Int                 @default(1)
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
 
+  versions    WorkflowVersion[]
   executions  WorkflowExecution[]
 
   @@index([workspaceId])
+  @@index([userId])
   @@index([status])
   @@index([createdAt])
+}
+
+model WorkflowVersion {
+  id          String    @id @default(uuid())
+  workflowId  String
+  workflow    Workflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  version     Int
+  definition  Json
+  changeLog   String?   @db.Text
+  createdAt   DateTime  @default(now())
+
+  @@unique([workflowId, version])
+  @@index([workflowId])
+  @@index([version])
 }
 
 model WorkflowExecution {
   id          String                  @id @default(uuid())
   workflowId  String
   workflow    Workflow                @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  status      String                  @default("running")
+  version     Int                     @default(1)
+  status      String                  @default("running") // queued, running, waiting_for_approval, paused, completed, partially_completed, failed, cancelled
+  mode        String                  @default("assisted") // manual, assisted, autonomous
   input       Json?
   output      Json?
+  error       String?                 @db.Text
   startedAt   DateTime                @default(now())
   completedAt DateTime?
 
@@ -767,79 +807,241 @@ model WorkflowStepExecution {
   executionId String
   execution   WorkflowExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
   stepId      String
-  status      String            @default("pending")
+  nodeId      String?
+  nodeType    String?
+  status      String            @default("pending") // pending, ready, running, waiting_for_approval, succeeded, failed, skipped, cancelled
   input       Json?
   output      Json?
   error       String?           @db.Text
+  retryCount  Int               @default(0)
   startedAt   DateTime?
   completedAt DateTime?
 
   @@index([executionId])
   @@index([status])
+  @@index([stepId])
 }
 
 model Skill {
-  id           String     @id @default(uuid())
-  userId       String
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workspaceId  String?
-  workspace    Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  name         String
-  description  String     @db.Text
-  instructions String     @db.Text
-  tools        Json?
-  permissions  Json?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id               String           @id @default(uuid())
+  userId           String
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId      String?
+  workspace        Workspace?       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name             String
+  description      String           @db.Text
+  instructions     String?          @db.Text
+  category         String           @default("automation") // research, browser, coding, automation, data
+  currentVersion   Int              @default(1)
+  lifecycleState   String           @default("draft") // draft, validating, ready, active, disabled, deprecated, failed_validation
+  tags             String[]         @default([])
+  icon             String?
+  isSystem         Boolean          @default(false)
+  definition       Json?
+  inputSchema      Json?
+  outputSchema     Json?
+  tools            Json?
+  permissions      Json?
+  config           Json?
+  validationErrors Json?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  versions         SkillVersion[]
+  executions       SkillExecution[]
+  tests            SkillTest[]
 
   @@index([userId])
   @@index([workspaceId])
+  @@index([lifecycleState])
+  @@index([category])
   @@index([createdAt])
 }
 
+model SkillVersion {
+  id           String           @id @default(uuid())
+  skillId      String
+  skill        Skill            @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  version      Int
+  definition   Json
+  inputSchema  Json
+  outputSchema Json
+  tools        Json
+  permissions  Json
+  config       Json?
+  changeLog    String?          @db.Text
+  createdAt    DateTime         @default(now())
+
+  executions   SkillExecution[]
+  tests        SkillTest[]
+
+  @@unique([skillId, version])
+  @@index([skillId])
+  @@index([version])
+}
+
+model SkillExecution {
+  id             String        @id @default(uuid())
+  skillId        String
+  skill          Skill         @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  skillVersionId String?
+  skillVersion   SkillVersion? @relation(fields: [skillVersionId], references: [id], onDelete: SetNull)
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  caller         String?       @default("manual") // manual, agent, workflow:<id>
+  status         String        @default("queued") // queued, running, waiting_for_approval, completed, partially_completed, failed, cancelled
+  inputs         Json?
+  outputs        Json?
+  error          String?       @db.Text
+  durationMs     Int           @default(0)
+  artifacts      Json?
+  toolExecutions Json?
+  startedAt      DateTime      @default(now())
+  completedAt    DateTime?
+
+  @@index([skillId])
+  @@index([skillVersionId])
+  @@index([userId])
+  @@index([status])
+  @@index([startedAt])
+}
+
+model SkillTest {
+  id              String        @id @default(uuid())
+  skillId         String
+  skill           Skill         @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  skillVersionId  String?
+  skillVersion    SkillVersion? @relation(fields: [skillVersionId], references: [id], onDelete: SetNull)
+  name            String
+  description     String?
+  inputs          Json
+  expectedOutputs Json?
+  status          String        @default("pending") // pending, passed, failed
+  result          Json?
+  error           String?       @db.Text
+  durationMs      Int           @default(0)
+  lastRunAt       DateTime?
+  createdAt       DateTime      @default(now())
+
+  @@index([skillId])
+  @@index([skillVersionId])
+  @@index([status])
+}
+
 model ApprovalRequest {
-  id          String     @id @default(uuid())
-  userId      String
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workspaceId String
-  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  taskId      String?
-  task        AgentTask? @relation(fields: [taskId], references: [id], onDelete: SetNull)
-  agentRunId  String?
-  agentRun    AgentRun?  @relation(fields: [agentRunId], references: [id], onDelete: SetNull)
-  action      String
-  target      String
-  details     Json?
-  status      String     @default("pending")
-  createdAt   DateTime   @default(now())
-  resolvedAt  DateTime?
+  id                  String             @id @default(uuid())
+  userId              String
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId         String
+  workspace           Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  taskId              String?
+  task                AgentTask?         @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  agentRunId          String?
+  agentRun            AgentRun?          @relation(fields: [agentRunId], references: [id], onDelete: SetNull)
+  workflowExecutionId String?
+  stepId              String?
+  actionTitle         String?
+  actionType          String?
+  action              String
+  target              String
+  details             Json?
+  requestingActor     String?
+  callerId            String?
+  payloadDigest       String?
+  riskLevel           String?            @default("moderate")
+  status              String             @default("pending") // pending, approved, rejected, expired, cancelled
+  policyId            String?
+  policy              ApprovalPolicy?    @relation(fields: [policyId], references: [id], onDelete: SetNull)
+  skillExecutionId    String?
+  createdAt           DateTime           @default(now())
+  expiresAt           DateTime?
+  resolvedAt          DateTime?
+  decisions           ApprovalDecision[]
 
   @@index([userId])
   @@index([workspaceId])
   @@index([taskId])
   @@index([agentRunId])
+  @@index([workflowExecutionId])
+  @@index([skillExecutionId])
+  @@index([policyId])
   @@index([status])
   @@index([createdAt])
 }
 
+model ApprovalPolicy {
+  id               String            @id @default(uuid())
+  userId           String
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId      String?
+  workspace        Workspace?        @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  name             String
+  category         String            // external_communication, form_submission, destructive_operation, sensitive_data_access, browser_mutation
+  description      String
+  riskThreshold    String            @default("moderate") // low, moderate, high, critical
+  requiresApproval Boolean           @default(true)
+  autoExpireHours  Int               @default(24)
+  enabled          Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  approvalRequests ApprovalRequest[]
+
+  @@index([userId])
+  @@index([workspaceId])
+  @@index([category])
+  @@index([enabled])
+}
+
+model ApprovalDecision {
+  id                String          @id @default(uuid())
+  approvalRequestId String
+  approvalRequest   ApprovalRequest @relation(fields: [approvalRequestId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  decision          String          // approved, rejected, cancelled
+  reason            String?
+  payloadDigest     String?
+  decidedAt         DateTime        @default(now())
+
+  @@index([approvalRequestId])
+  @@index([userId])
+  @@index([decision])
+  @@index([decidedAt])
+}
+
 model ActivityEvent {
-  id          String     @id @default(uuid())
-  userId      String
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workspaceId String?
-  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  taskId      String?
-  task        AgentTask? @relation(fields: [taskId], references: [id], onDelete: SetNull)
-  agentRunId  String?
-  type        String
-  message     String     @db.Text
-  metadata    Json?
-  createdAt   DateTime   @default(now())
+  id                  String     @id @default(uuid())
+  userId              String
+  user                User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId         String?
+  workspace           Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  taskId              String?
+  task                AgentTask? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  agentRunId          String?
+  category            String     @default("system") // browser, agents, approvals, system
+  actorType           String     @default("system") // user, agent, workflow, system
+  actorId             String?
+  sourceModule        String     @default("system") // browser, coding, research, automation, workflows, skills, approvals, auth, settings, system
+  actionName          String?
+  outcome             String     @default("success") // success, failure, warning, pending
+  correlationId       String?
+  workflowExecutionId String?
+  skillExecutionId    String?
+  approvalRequestId   String?
+  type                String
+  message             String     @db.Text
+  metadata            Json?
+  createdAt           DateTime   @default(now())
 
   @@index([userId])
   @@index([workspaceId])
   @@index([taskId])
   @@index([agentRunId])
+  @@index([category])
+  @@index([actorType])
+  @@index([sourceModule])
+  @@index([outcome])
+  @@index([correlationId])
   @@index([type])
   @@index([createdAt])
 }
@@ -886,3 +1088,249 @@ model UserPreference {
   @@unique([userId, key])
   @@index([userId])
 }
+
+// ============================================================
+// NEXUS AI CODING AGENT & PROJECTS
+// ============================================================
+
+model CodingProject {
+  id               String            @id @default(uuid())
+  userId           String
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId      String?
+  workspace        Workspace?        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name             String
+  description      String?           @db.Text
+  language         String            @default("python")
+  problemTitle     String?
+  problemStatement String?           @db.Text
+  problemUrl       String?
+  currentCode      String            @db.Text
+  timeComplexity   String?
+  spaceComplexity  String?
+  explanation      String?           @db.Text
+  testCases        Json?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  files            ProjectFile[]
+  versions         CodeVersion[]
+  executions       CodeExecution[]
+
+  @@index([userId])
+  @@index([workspaceId])
+  @@index([language])
+  @@index([createdAt])
+}
+
+model ProjectFile {
+  id        String        @id @default(uuid())
+  projectId String
+  project   CodingProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name      String
+  path      String
+  content   String        @db.Text
+  language  String        @default("python")
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  versions  CodeVersion[]
+
+  @@index([projectId])
+  @@index([path])
+}
+
+model CodeVersion {
+  id            String         @id @default(uuid())
+  projectId     String
+  project       CodingProject  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  fileId        String?
+  file          ProjectFile?   @relation(fields: [fileId], references: [id], onDelete: SetNull)
+  versionNumber Int
+  content       String         @db.Text
+  description   String?
+  createdAt     DateTime       @default(now())
+
+  @@index([projectId])
+  @@index([fileId])
+  @@index([versionNumber])
+  @@index([createdAt])
+}
+
+model CodeExecution {
+  id          String         @id @default(uuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId   String?
+  project     CodingProject? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  language    String
+  code        String         @db.Text
+  status      String         @default("completed") // completed, timeout, failed
+  exitCode    Int            @default(0)
+  stdout      String         @default("") @db.Text
+  stderr      String         @default("") @db.Text
+  durationMs  Int            @default(0)
+  testResults Json?
+  createdAt   DateTime       @default(now())
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ============================================================
+// NEXUS PICTURE STUDIO & WEBPAGE CAPTURE
+// ============================================================
+
+model WebCapture {
+  id             String            @id @default(uuid())
+  userId         String
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId    String?
+  workspace      Workspace?        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  url            String
+  resolvedUrl    String?
+  title          String            @default("Web Capture")
+  screenshotPath String            @db.Text
+  width          Int               @default(1280)
+  height         Int               @default(800)
+  format         String            @default("png")
+  fileSize       Int               @default(0)
+  durationMs     Int               @default(0)
+  status         String            @default("completed") // completed, failed, processing
+  error          String?           @db.Text
+  telemetry      Json?
+  headings       Json?
+  excerpt        String?           @db.Text
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  analyses       CaptureAnalysis[]
+
+  @@index([userId])
+  @@index([workspaceId])
+  @@index([url])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model CaptureAnalysis {
+  id         String     @id @default(uuid())
+  captureId  String
+  capture    WebCapture @relation(fields: [captureId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider   String     @default("ai")
+  model      String     @default("qwen3:8b")
+  content    String     @db.Text
+  status     String     @default("completed")
+  createdAt  DateTime   @default(now())
+
+  @@index([captureId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ============================================================
+// NEXUS BROWSER DOWNLOADS, BOOKMARKS & HISTORY
+// ============================================================
+
+model DownloadRecord {
+  id                String     @id @default(uuid())
+  userId            String
+  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId       String?
+  workspace         Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  filename          String
+  sourceUrl         String?    @db.Text
+  sourceDomain      String?
+  mimeType          String?
+  extension         String?
+  expectedSize      Int        @default(0)
+  downloadedSize    Int        @default(0)
+  status            String     @default("completed") // completed, in_progress, paused, failed, cancelled
+  error             String?    @db.Text
+  filePath          String?    @db.Text
+  managedStorageRef String?
+  nativeDownloadId  String?
+  sha256            String?
+  metadata          Json?
+  createdAt         DateTime   @default(now())
+  completedAt       DateTime?
+  updatedAt         DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([workspaceId])
+  @@index([status])
+  @@index([extension])
+  @@index([createdAt])
+}
+
+model Bookmark {
+  id          String     @id @default(uuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId String?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  title       String
+  url         String     @db.Text
+  faviconUrl  String?    @db.Text
+  folder      String?    @default("General")
+  tags        String[]
+  notes       String?    @db.Text
+  isPinned    Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([workspaceId])
+  @@index([folder])
+  @@index([createdAt])
+}
+
+model BrowserHistoryItem {
+  id           String     @id @default(uuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId  String?
+  workspace    Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  title        String
+  url          String     @db.Text
+  faviconUrl   String?    @db.Text
+  visitCount   Int        @default(1)
+  isAgentVisit Boolean    @default(false)
+  lastVisitedAt DateTime  @default(now())
+  createdAt    DateTime   @default(now())
+
+  @@index([userId])
+  @@index([workspaceId])
+  @@index([url])
+  @@index([lastVisitedAt])
+}
+
+// ============================================================
+// NEXUS AUTOMATION STUDIO: INTEGRATION CONNECTIONS
+// ============================================================
+
+model IntegrationConnection {
+  id             String    @id @default(uuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider       String    // whatsapp, ai, sandbox, research, capture, database
+  name           String
+  status         String    @default("connected") // connected, degraded, unconfigured, failed
+  scopes         String[]
+  config         Json?
+  lastVerifiedAt DateTime?
+  latencyMs      Int?
+  error          String?   @db.Text
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([userId, provider])
+  @@index([userId])
+  @@index([provider])
+  @@index([status])
+}
+

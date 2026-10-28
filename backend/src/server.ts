@@ -19,14 +19,22 @@ import { agentsRouter } from "./modules/agents/agents.routes.js";
 import { memoryRouter } from "./modules/memory/memory.routes.js";
 import { researchRouter } from "./modules/research/research.routes.js";
 import { workflowsRouter } from "./modules/workflows/workflows.routes.js";
+import { executionsRouter } from "./modules/workflows/executions.routes.js";
 import { skillsRouter } from "./modules/skills/skills.routes.js";
-import { approvalsRouter } from "./modules/approvals/approvals.routes.js";
+import { approvalsRouter, approvalPoliciesRouter } from "./modules/approvals/approvals.routes.js";
 import { activityRouter } from "./modules/activity/activity.routes.js";
 import { settingsRouter } from "./modules/settings/settings.routes.js";
 import { nexusIntentRouter } from "./modules/nexus/nexus-intent.routes.js";
 import { browserAnalyzeRouter } from "./modules/browser/browser-analyze.routes.js";
 import { healthRouter } from "./modules/health/health.routes.js";
 import { aiRouter } from "./modules/ai/ai.routes.js";
+import { codingRouter } from "./modules/coding/coding.routes.js";
+import { capturesRouter } from "./modules/captures/captures.routes.js";
+import downloadsRouter from "./modules/downloads/downloads.routes.js";
+import bookmarksRouter from "./modules/bookmarks/bookmarks.routes.js";
+import historyRouter from "./modules/history/history.routes.js";
+import { automationRouter } from "./modules/automation/automation.routes.js";
+import { integrationsRouter } from "./modules/integrations/integrations.routes.js";
 import { AgentService } from "./agents/agent.service.js";
 import { ResearchOrchestrator } from "./modules/research/research.orchestrator.js";
 
@@ -70,22 +78,51 @@ app.use("/api/agents", agentsRouter);
 app.use("/api/agent", agentsRouter);
 app.use("/api/memory", memoryRouter);
 app.use("/api/research", researchRouter);
+app.use("/api/v1/investigations", researchRouter);
 app.use("/api/workflows", workflowsRouter);
+app.use("/api/v1/workflows", workflowsRouter);
+app.use("/api/executions", executionsRouter);
+app.use("/api/v1/executions", executionsRouter);
+app.use("/api/automation", automationRouter);
+app.use("/api/v1/automation", automationRouter);
+app.use("/api/integrations", integrationsRouter);
+app.use("/api/v1/integrations", integrationsRouter);
 app.use("/api/skills", skillsRouter);
+app.use("/api/v1/skills", skillsRouter);
 app.use("/api/approvals", approvalsRouter);
+app.use("/api/v1/approvals", approvalsRouter);
+app.use("/api/v1/approval-policies", approvalPoliciesRouter);
 app.use("/api/activity", activityRouter);
+app.use("/api/v1/activity", activityRouter);
 app.use("/api/settings", settingsRouter);
+app.use("/api/v1/settings", settingsRouter);
 app.use("/api/nexus", nexusIntentRouter);
 app.use("/api/browser", browserAnalyzeRouter);
+app.use("/api/coding", codingRouter);
+app.use("/api/captures", capturesRouter);
+app.use("/api/downloads", downloadsRouter);
+app.use("/api/bookmarks", bookmarksRouter);
+app.use("/api/history", historyRouter);
 app.use("/api/health", healthRouter);
+
+// Static captures directory for Picture Studio
+const capturesDir = path.resolve(process.cwd(), "dist-renderer", "captures");
+if (fs.existsSync(capturesDir)) {
+  app.use("/captures", express.static(capturesDir));
+}
 
 // Frontend static assets & SPA fallback (production / web hosting)
 const rendererDir = path.resolve(process.cwd(), "dist-renderer");
 if (fs.existsSync(rendererDir)) {
-  app.use(express.static(rendererDir));
+  app.use(express.static(rendererDir, { extensions: ["html"] }));
   app.get("*", (req, res, next) => {
-    if (req.path.startsWith("/api") || req.path === "/health" || req.path === "/ready") {
+    if (req.path.startsWith("/api") || req.path === "/health" || req.path === "/ready" || req.path.startsWith("/captures")) {
       return next();
+    }
+    const cleanPath = req.path.replace(/^\/+/, "");
+    const directHtmlPath = path.join(rendererDir, `${cleanPath}.html`);
+    if (cleanPath && fs.existsSync(directHtmlPath)) {
+      return res.sendFile(directHtmlPath);
     }
     const indexPath = path.join(rendererDir, "index.html");
     if (fs.existsSync(indexPath)) {

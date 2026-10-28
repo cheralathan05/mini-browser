@@ -16,6 +16,16 @@ const createResearchSchema = z.object({
   question: z.string().min(1),
   mode: z.enum(["quick", "standard", "deep"]).optional().default("standard"),
   spaceId: z.string().optional(),
+  sourcePreferences: z.array(z.string()).optional(),
+  dateRange: z.string().optional(),
+  exclusions: z.string().optional(),
+  outputFormat: z.string().optional(),
+});
+
+const updateInvestigationSchema = z.object({
+  name: z.string().min(1).optional(),
+  title: z.string().min(1).optional(),
+  question: z.string().min(1).optional(),
 });
 
 const updatePlanSchema = z.object({
@@ -289,6 +299,33 @@ router.post("/:id/retry", optionalAuth, async (req: RequestWithId, res: Response
   }
 });
 
+// 8b. PATCH /api/research/:id - Rename or update investigation title/question
+router.patch("/:id", optionalAuth, async (req: RequestWithId, res: Response, next: NextFunction) => {
+  try {
+    const { userId } = await resolveUserAndWorkspace(req);
+    const data = updateInvestigationSchema.parse(req.body);
+
+    const project = await prisma.researchProject.findFirst({
+      where: { id: req.params.id, workspace: { userId } },
+    });
+
+    if (!project) throw new AppError("Research project not found", 404, "NOT_FOUND");
+
+    const newName = data.name || data.title;
+    const updated = await prisma.researchProject.update({
+      where: { id: project.id },
+      data: {
+        ...(newName ? { name: newName, title: newName } : {}),
+        ...(data.question ? { question: data.question } : {}),
+      },
+    });
+
+    res.json({ success: true, project: updated });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // 9. PATCH /api/research/:id/plan - Update/reorder plan objectives
 router.patch("/:id/plan", optionalAuth, async (req: RequestWithId, res: Response, next: NextFunction) => {
   try {
@@ -384,8 +421,8 @@ router.get("/:id/report", optionalAuth, async (req: RequestWithId, res: Response
   }
 });
 
-// 14. POST /api/research/:id/ask - Context-grounded Q&A
-router.post("/:id/ask", optionalAuth, async (req: RequestWithId, res: Response, next: NextFunction) => {
+// 14. POST /api/research/:id/ask & /api/research/:id/follow-ups - Context-grounded Q&A
+const handleAskResearch = async (req: RequestWithId, res: Response, next: NextFunction) => {
   try {
     const { question: userQuery } = askResearchSchema.parse(req.body);
     const { userId } = await resolveUserAndWorkspace(req);
@@ -499,7 +536,10 @@ Provide a direct, high-value, structured answer.`;
   } catch (error) {
     next(error);
   }
-});
+};
+
+router.post("/:id/ask", optionalAuth, handleAskResearch);
+router.post("/:id/follow-ups", optionalAuth, handleAskResearch);
 
 // 15. DELETE /api/research/:id
 router.delete("/:id", optionalAuth, async (req: RequestWithId, res: Response, next: NextFunction) => {

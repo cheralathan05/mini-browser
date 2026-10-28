@@ -62,6 +62,8 @@ import {
   ShieldAlert,
   Trash2,
   Edit2,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { NexusBrowserHome } from "./NexusBrowserHome";
 import { NexusIntelligencePanel } from "./NexusIntelligencePanel";
@@ -134,6 +136,7 @@ export const NexusBrowserView: React.FC<NexusBrowserViewProps> = ({
   const [windowId, setWindowId] = useState<number>(1);
   const [showAgentPanel, setShowAgentPanel] = useState<boolean>(false);
   const [activeAgentInfo, setActiveAgentInfo] = useState<ActiveAgentState | null>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
 
   // Tabs state
   const [tabs, setTabs] = useState<NexusBrowserTab[]>(() => {
@@ -1147,38 +1150,59 @@ export const NexusBrowserView: React.FC<NexusBrowserViewProps> = ({
           LEFT SIDEBAR — Navigation, Workspaces, Brand
       ══════════════════════════════════════════════════════ */}
       <aside
-        className="flex flex-col shrink-0 overflow-hidden border-r border-white/[0.06] z-20"
-        style={{ width: 200, background: "#0f0f1a" }}
+        className="flex flex-col shrink-0 overflow-hidden border-r border-white/[0.06] z-20 transition-all duration-200"
+        style={{ width: isSidebarCollapsed ? 64 : 200, background: "#0f0f1a" }}
       >
-        {/* Brand Logo */}
-        <div
-          className="flex items-center gap-2.5 px-4 py-4 cursor-pointer group"
-          onClick={() => onNavigate("browser")}
-        >
-          <div className="w-8 h-8 rounded-xl overflow-hidden shadow-lg shadow-violet-500/30 shrink-0 ring-1 ring-violet-500/20 group-hover:ring-violet-400/40 transition-all">
-            <img
-              src="/nexus-icon.jpg"
-              alt="NEXUS"
-              className="w-full h-full object-cover"
-            />
+        {/* Brand Logo & Collapse Toggle */}
+        <div className="flex items-center justify-between px-3 py-3.5 border-b border-white/[0.04]">
+          <div
+            className="flex items-center gap-2.5 cursor-pointer group min-w-0"
+            onClick={() => onNavigate("browser")}
+            title="NEXUS AI Browser"
+          >
+            <div className="w-8 h-8 rounded-xl overflow-hidden shadow-lg shadow-violet-500/30 shrink-0 ring-1 ring-violet-500/20 group-hover:ring-violet-400/40 transition-all">
+              <img
+                src="/nexus-icon.jpg"
+                alt="NEXUS"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            {!isSidebarCollapsed && (
+              <div className="min-w-0">
+                <div className="text-white font-bold text-sm tracking-wider uppercase truncate">NEXUS</div>
+                <div className="text-white/40 text-[10px] tracking-wide truncate">AI Browser</div>
+              </div>
+            )}
           </div>
-          <div>
-            <div className="text-white font-bold text-sm tracking-wider uppercase">NEXUS</div>
-            <div className="text-white/40 text-[10px] tracking-wide">AI Browser</div>
-          </div>
+          <button
+            type="button"
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/[0.08] transition shrink-0 ml-1"
+            title={isSidebarCollapsed ? "Expand Navigation" : "Compact Mode"}
+          >
+            {isSidebarCollapsed ? (
+              <PanelLeftOpen className="w-4 h-4 text-violet-400" />
+            ) : (
+              <PanelLeftClose className="w-4 h-4" />
+            )}
+          </button>
         </div>
 
         {/* Primary Nav */}
-        <nav className="flex flex-col gap-0.5 px-2 mt-1">
-          <div className="text-[9px] font-semibold tracking-wider text-white/30 uppercase px-2 mb-1">
-            Platform
-          </div>
+        <nav className="flex flex-col gap-0.5 px-2 mt-2">
+          {!isSidebarCollapsed && (
+            <div className="text-[9px] font-semibold tracking-wider text-white/30 uppercase px-2 mb-1">
+              Platform
+            </div>
+          )}
           {[
             { id: "browser", label: "Browser", icon: Globe },
+            { id: "coding", label: "Coding Agent", icon: Code2 },
+            { id: "picture-studio", label: "Picture Studio", icon: Camera },
             { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
             { id: "agent", label: "AI Missions", icon: Bot },
             { id: "research", label: "Deep Research", icon: Microscope },
-            { id: "workflows", label: "Workflows", icon: Workflow },
+            { id: "workflows", label: "Automation Studio", icon: Workflow },
             { id: "memory", label: "Memory Vault", icon: Brain },
             { id: "skills", label: "Skill Library", icon: Sparkles },
             { id: "approvals", label: "Approvals", icon: ShieldAlert },
@@ -1190,21 +1214,30 @@ export const NexusBrowserView: React.FC<NexusBrowserViewProps> = ({
                 key={id}
                 type="button"
                 onClick={() => onNavigate(id as any)}
-                className={`group flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all duration-150 text-left w-full ${
+                title={isSidebarCollapsed ? label : undefined}
+                className={`group flex items-center ${
+                  isSidebarCollapsed ? "justify-center px-2" : "gap-2.5 px-3"
+                } py-1.5 rounded-lg text-[12px] font-medium transition-all duration-150 text-left w-full ${
                   isActive
                     ? "bg-violet-600/25 text-white border border-violet-500/30 shadow-sm"
                     : "text-white/55 hover:bg-white/[0.06] hover:text-white/90 border border-transparent"
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-violet-400" : "text-white/40 group-hover:text-white/70"}`} />
-                <span className="truncate">{label}</span>
+                <Icon
+                  className={`w-3.5 h-3.5 shrink-0 ${
+                    isActive ? "text-violet-400" : "text-white/40 group-hover:text-white/70"
+                  }`}
+                />
+                {!isSidebarCollapsed && <span className="truncate">{label}</span>}
               </button>
             );
           })}
 
-          <div className="text-[9px] font-semibold tracking-wider text-white/30 uppercase px-2 mt-3 mb-1">
-            Browser
-          </div>
+          {!isSidebarCollapsed && (
+            <div className="text-[9px] font-semibold tracking-wider text-white/30 uppercase px-2 mt-3 mb-1">
+              Browser
+            </div>
+          )}
           {[
             { id: "bookmarks", label: "Bookmarks", icon: Bookmark },
             { id: "history", label: "History", icon: History },
@@ -1218,34 +1251,43 @@ export const NexusBrowserView: React.FC<NexusBrowserViewProps> = ({
                 key={id}
                 type="button"
                 onClick={() => onNavigate(id as any)}
-                className={`group flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all duration-150 text-left w-full ${
+                title={isSidebarCollapsed ? label : undefined}
+                className={`group flex items-center ${
+                  isSidebarCollapsed ? "justify-center px-2" : "gap-2.5 px-3"
+                } py-1.5 rounded-lg text-[12px] font-medium transition-all duration-150 text-left w-full ${
                   isActive
                     ? "bg-violet-600/25 text-white border border-violet-500/30 shadow-sm"
                     : "text-white/55 hover:bg-white/[0.06] hover:text-white/90 border border-transparent"
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-violet-400" : "text-white/40 group-hover:text-white/70"}`} />
-                <span className="truncate">{label}</span>
+                <Icon
+                  className={`w-3.5 h-3.5 shrink-0 ${
+                    isActive ? "text-violet-400" : "text-white/40 group-hover:text-white/70"
+                  }`}
+                />
+                {!isSidebarCollapsed && <span className="truncate">{label}</span>}
               </button>
             );
           })}
         </nav>
 
         {/* Workspaces */}
-        <div className="mt-5 px-3 flex-1 min-h-0 overflow-y-auto">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-semibold tracking-widest text-white/30 uppercase">Workspaces</span>
-            <button
-              type="button"
-              title="Create new workspace"
-              onClick={() => {
-                setWorkspaceModal({ isOpen: true, mode: "create", workspaceToEdit: null });
-              }}
-              className="text-white/30 hover:text-white/80 p-1 rounded hover:bg-white/[0.06] transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" />
-            </button>
-          </div>
+        <div className="mt-4 px-2 flex-1 min-h-0 overflow-y-auto">
+          {!isSidebarCollapsed && (
+            <div className="flex items-center justify-between mb-2 px-1">
+              <span className="text-[10px] font-semibold tracking-widest text-white/30 uppercase">Workspaces</span>
+              <button
+                type="button"
+                title="Create new workspace"
+                onClick={() => {
+                  setWorkspaceModal({ isOpen: true, mode: "create", workspaceToEdit: null });
+                }}
+                className="text-white/30 hover:text-white/80 p-1 rounded hover:bg-white/[0.06] transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
 
           <div className="flex flex-col gap-0.5">
             {workspaces.map((ws: any, i: number) => {
@@ -1255,7 +1297,10 @@ export const NexusBrowserView: React.FC<NexusBrowserViewProps> = ({
               return (
                 <div
                   key={ws.id}
-                  className={`group/ws flex items-center justify-between px-2 py-1.5 rounded-lg text-[12px] transition-all w-full ${
+                  title={isSidebarCollapsed ? ws.name : undefined}
+                  className={`group/ws flex items-center ${
+                    isSidebarCollapsed ? "justify-center px-1" : "justify-between px-2"
+                  } py-1.5 rounded-lg text-[12px] transition-all w-full ${
                     isActiveWs ? "bg-white/[0.08] text-white" : "text-white/50 hover:bg-white/[0.04] hover:text-white/80"
                   }`}
                 >
@@ -1265,35 +1310,37 @@ export const NexusBrowserView: React.FC<NexusBrowserViewProps> = ({
                       setActiveSpaceName(ws.name);
                       onWorkspaceChange?.(ws.id);
                     }}
-                    className="flex items-center gap-2.5 min-w-0 flex-1 text-left"
+                    className={`flex items-center ${isSidebarCollapsed ? "justify-center" : "gap-2.5"} min-w-0 flex-1 text-left`}
                   >
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: dotColor }} />
-                    <span className="truncate">{ws.name}</span>
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: dotColor }} />
+                    {!isSidebarCollapsed && <span className="truncate">{ws.name}</span>}
                   </button>
 
-                  <div className="opacity-0 group-hover/ws:opacity-100 flex items-center gap-1 transition-opacity shrink-0 ml-1">
-                    <button
-                      type="button"
-                      title="Edit Workspace"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setWorkspaceModal({ isOpen: true, mode: "edit", workspaceToEdit: ws });
-                      }}
-                      className="p-1 rounded text-white/40 hover:text-white hover:bg-white/[0.08]"
-                    >
-                      <Edit2 className="w-3 h-3" />
-                    </button>
-                    {workspaces.length > 1 && (
+                  {!isSidebarCollapsed && (
+                    <div className="opacity-0 group-hover/ws:opacity-100 flex items-center gap-1 transition-opacity shrink-0 ml-1">
                       <button
                         type="button"
-                        title="Delete Workspace"
-                        onClick={(e) => handleDeleteWorkspace(ws.id, ws.name, e)}
-                        className="p-1 rounded text-rose-400/60 hover:text-rose-400 hover:bg-rose-500/10"
+                        title="Edit Workspace"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setWorkspaceModal({ isOpen: true, mode: "edit", workspaceToEdit: ws });
+                        }}
+                        className="p-1 rounded text-white/40 hover:text-white hover:bg-white/[0.08]"
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Edit2 className="w-3 h-3" />
                       </button>
-                    )}
-                  </div>
+                      {workspaces.length > 1 && (
+                        <button
+                          type="button"
+                          title="Delete Workspace"
+                          onClick={(e) => handleDeleteWorkspace(ws.id, ws.name, e)}
+                          className="p-1 rounded text-rose-400/60 hover:text-rose-400 hover:bg-rose-500/10"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}

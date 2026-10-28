@@ -83,6 +83,7 @@ import { NexusResearchView } from "@/components/nexus/NexusResearchView";
 import { NexusWorkflowsView } from "@/components/nexus/NexusWorkflowsView";
 import { NexusMemoryView } from "@/components/nexus/NexusMemoryView";
 import { NexusSkillsView } from "@/components/nexus/NexusSkillsView";
+import { NexusApprovalsView } from "@/components/nexus/NexusApprovalsView";
 import { NexusApprovalsBanner } from "@/components/nexus/NexusApprovalsBanner";
 import { NexusActivityView } from "@/components/nexus/NexusActivityView";
 import { NexusSettingsView } from "@/components/nexus/NexusSettingsView";
@@ -6871,14 +6872,7 @@ export function HomePage({ pageMode = "start" }: HomePageProps) {
       {activeNexusTab === "skills" && <NexusSkillsView />}
       {activeNexusTab === "activity" && <NexusActivityView />}
       {activeNexusTab === "settings" && <NexusSettingsView />}
-      {activeNexusTab === "approvals" && (
-        <div className="flex-1 flex flex-col items-center justify-center p-8 bg-neutral-950 text-center">
-          <p className="text-sm font-semibold text-neutral-300">Approvals Control Center</p>
-          <p className="text-xs text-neutral-500 mt-1">
-            Review pending consequential actions in the prompt banner below.
-          </p>
-        </div>
-      )}
+      {activeNexusTab === "approvals" && <NexusApprovalsView />}
 
       <div className={`flex-1 overflow-hidden relative ${activeNexusTab === "browser" ? "flex flex-col" : "hidden"}`}>
         <div

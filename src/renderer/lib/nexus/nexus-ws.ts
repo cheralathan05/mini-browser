@@ -1,4 +1,5 @@
 // NEXUS BROWSER - Realtime WebSocket Client
+import { getWsUrl } from "./nexus-config";
 
 type WebSocketListener = (data: any) => void;
 
@@ -10,15 +11,7 @@ class NexusWebSocketClient {
   private isConnected = false;
 
   constructor() {
-    const defaultWsUrl =
-      typeof window !== "undefined" &&
-      window.location.origin &&
-      !window.location.protocol.startsWith("file") &&
-      !window.location.hostname.includes("localhost") &&
-      !window.location.hostname.includes("127.0.0.1")
-        ? `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}`
-        : "ws://127.0.0.1:8001";
-    this.url = import.meta.env.VITE_NEXUS_WS_URL || defaultWsUrl;
+    this.url = getWsUrl();
   }
 
   public connect(userId?: string, workspaceId?: string) {

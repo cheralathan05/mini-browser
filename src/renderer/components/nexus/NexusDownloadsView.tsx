@@ -23,26 +23,38 @@ import {
   FileCode,
   FileQuestion,
   Sparkles,
+  Eye,
+  AlertTriangle,
+  FolderCheck,
+  CheckSquare,
+  Bot,
+  Send,
+  Loader2,
+  Shield,
+  Layers,
 } from "lucide-react";
 
 import { nexusClient } from "../../lib/nexus/nexus-client";
+import { downloadsApi, type DownloadRecordItem, type DownloadsAiResponse } from "../../lib/nexus/downloads.api";
 
 export interface DownloadItem {
   id: string;
   filename: string;
   url: string;
   path?: string;
-  size: number; // bytes
+  size: number;
   downloadedBytes: number;
   status: "completed" | "in_progress" | "paused" | "failed" | "cancelled";
   startedAt: string;
   completedAt?: string;
   type: "file" | "image" | "archive" | "pdf" | "code";
-  speed?: number; // bytes/sec (for active downloads)
+  speed?: number;
+  sourceDomain?: string;
 }
 
 interface Props {
   onOpenInBrowser?: (url: string, title?: string) => void;
+  workspaceId?: string | null;
 }
 
 function formatBytes(bytes: number): string {
@@ -60,7 +72,6 @@ function formatTimestamp(isoStr?: string): string {
 
   const now = new Date();
   const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
-
   const timeStr = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   if (diffDays === 0 && d.toDateString() === now.toDateString()) {
     return `Today at ${timeStr}`;
@@ -99,11 +110,11 @@ function inferFileType(filename: string): DownloadItem["type"] {
   if (["png", "jpg", "jpeg", "webp", "gif", "svg", "bmp", "ico", "avif"].includes(ext)) return "image";
   if (["zip", "tar", "gz", "7z", "rar", "dmg", "exe", "msi", "iso", "pkg"].includes(ext)) return "archive";
   if (["pdf", "epub", "doc", "docx", "txt", "md", "rtf", "odt"].includes(ext)) return "pdf";
-  if (["ts", "tsx", "js", "jsx", "py", "json", "html", "css", "rs", "go", "java", "c", "cpp", "xml", "yaml", "yml", "sh"].includes(ext)) return "code";
+  if (["ts", "tsx", "js", "jsx", "py", "json", "html", "css", "rs", "go", "java", "c", "cpp", "xml", "yaml", "yml", "sh", "sql"].includes(ext)) return "code";
   return "file";
 }
 
-export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
+export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser, workspaceId }) => {
   const [downloads, setDownloads] = useState<DownloadItem[]>([]);
   const [downloadsDirectory, setDownloadsDirectory] = useState<string>("Downloads");
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -112,6 +123,34 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
   const [filterType, setFilterType] = useState<"all" | "image" | "pdf" | "archive" | "code" | "file">("all");
   const [toast, setToast] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Safe Preview Modal State
+  const [previewItem, setPreviewItem] = useState<{
+    id: string;
+    filename: string;
+    category: string;
+    canPreview: boolean;
+    content?: string;
+    imageData?: string;
+    fileSize?: number;
+    message?: string;
+    error?: string;
+  } | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+
+  // File Deletion Confirmation Dialog State
+  const [confirmDelete, setConfirmDelete] = useState<{
+    id: string;
+    filename: string;
+    path?: string;
+  } | null>(null);
+
+  // AI Downloads Assistant State
+  const [showAiAssistant, setShowAiAssistant] = useState(false);
+  const [aiQuery, setAiQuery] = useState("");
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiResponse, setAiResponse] = useState<DownloadsAiResponse | null>(null);
+  const [organizingSuccess, setOrganizingSuccess] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -123,7 +162,7 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
     const downloadMap = new Map<string, DownloadItem>();
     const shell = typeof window !== "undefined" ? (window as any).browserShell : undefined;
 
-    // 1. Load native active and recorded downloads from Electron browser shell
+    // 1. Load active/recorded downloads from Electron browser shell if available
     if (shell?.downloadsGetState) {
       try {
         const state = await shell.downloadsGetState();
@@ -161,27 +200,59 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
       } catch {}
     }
 
-    // 2. Load system filesystem downloads from local full-stack backend
+    // 2. Load database-persisted and scanned downloads from PostgreSQL backend
     try {
-      const res = await nexusClient.getDownloads();
+      const res = await downloadsApi.list({
+        workspaceId: workspaceId || undefined,
+        search: searchQuery || undefined,
+        status: filterStatus !== "all" ? filterStatus : undefined,
+        type: filterType !== "all" ? filterType : undefined,
+      });
+
       if (res?.downloadsDirectory) {
         setDownloadsDirectory(res.downloadsDirectory);
       }
+
       if (res?.downloads && Array.isArray(res.downloads)) {
-        for (const d of res.downloads as DownloadItem[]) {
+        for (const d of res.downloads) {
+          const type = inferFileType(d.filename || d.filePath || "");
+          const key = (d.filePath || d.filename || d.id).toLowerCase();
+          if (!downloadMap.has(key)) {
+            downloadMap.set(key, {
+              id: d.id,
+              filename: d.filename,
+              path: d.filePath || undefined,
+              url: d.sourceUrl || (d.filePath ? `file:///${d.filePath.replace(/\\/g, "/")}` : ""),
+              size: d.downloadedSize || d.expectedSize || 0,
+              downloadedBytes: d.downloadedSize || 0,
+              status: d.status,
+              startedAt: d.createdAt,
+              completedAt: d.completedAt || undefined,
+              type,
+              sourceDomain: d.sourceDomain || undefined,
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("[NexusDownloads] backend API fetch notice:", err);
+    }
+
+    // 3. Fallback: also merge files from local filesystem explorer
+    try {
+      const localRes = await nexusClient.getDownloads();
+      if (localRes?.downloads && Array.isArray(localRes.downloads)) {
+        for (const d of localRes.downloads as DownloadItem[]) {
           const key = (d.path || d.filename || d.id).toLowerCase();
           if (!downloadMap.has(key)) {
             downloadMap.set(key, d);
           }
         }
       }
-    } catch (err) {
-      console.warn("[NexusDownloads] backend filesystem fetch notice:", err);
-    }
+    } catch {}
 
     const items = Array.from(downloadMap.values());
     items.sort((a, b) => {
-      // In progress downloads on top, then newest completed/started
       if (a.status === "in_progress" && b.status !== "in_progress") return -1;
       if (b.status === "in_progress" && a.status !== "in_progress") return 1;
       const timeA = new Date(a.completedAt || a.startedAt).getTime() || 0;
@@ -191,9 +262,8 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
 
     setDownloads(items);
     setIsLoading(false);
-  }, []);
+  }, [workspaceId, searchQuery, filterStatus, filterType]);
 
-  // Initial load and live event subscriptions
   useEffect(() => {
     loadRealDownloads();
 
@@ -201,17 +271,8 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
       loadRealDownloads();
     };
 
-    const handleWindowFocus = () => {
-      loadRealDownloads();
-    };
-
     window.addEventListener("downloads:changed", handleDownloadsChanged);
-    window.addEventListener("focus", handleWindowFocus);
-
-    return () => {
-      window.removeEventListener("downloads:changed", handleDownloadsChanged);
-      window.removeEventListener("focus", handleWindowFocus);
-    };
+    return () => window.removeEventListener("downloads:changed", handleDownloadsChanged);
   }, [loadRealDownloads]);
 
   // Polling interval if active downloads exist
@@ -221,7 +282,7 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
 
     const interval = setInterval(() => {
       loadRealDownloads();
-    }, 1200);
+    }, 1500);
 
     return () => clearInterval(interval);
   }, [downloads, loadRealDownloads]);
@@ -231,7 +292,6 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
     const shell = typeof window !== "undefined" ? (window as any).browserShell : undefined;
     try {
       if (item.path) {
-        // Reveal in OS file manager
         if (shell?.downloadsShowInFolder && !item.id.startsWith("dl_")) {
           await shell.downloadsShowInFolder(item.id);
         } else {
@@ -264,15 +324,72 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
     showToast("Path copied to clipboard");
   };
 
-  const handleDelete = async (id: string, pathOrFilename: string) => {
-    const shell = typeof window !== "undefined" ? (window as any).browserShell : undefined;
-    if (shell?.downloadsRemove && !id.startsWith("dl_")) {
-      try {
-        await shell.downloadsRemove(id, false);
-      } catch {}
+  const handlePreview = async (item: DownloadItem) => {
+    setIsPreviewLoading(true);
+    setPreviewItem({
+      id: item.id,
+      filename: item.filename,
+      category: item.type,
+      canPreview: false,
+    });
+
+    try {
+      if (!item.id.startsWith("dl_")) {
+        const res = await downloadsApi.getPreview(item.id);
+        setPreviewItem(res.preview);
+      } else {
+        // For local filesystem items, check extension
+        if (item.type === "image") {
+          setPreviewItem({
+            id: item.id,
+            filename: item.filename,
+            category: "image",
+            canPreview: true,
+            imageData: item.url || (item.path ? `file:///${item.path.replace(/\\/g, "/")}` : ""),
+            fileSize: item.size,
+          });
+        } else {
+          setPreviewItem({
+            id: item.id,
+            filename: item.filename,
+            category: item.type,
+            canPreview: false,
+            message: `File path: ${item.path}`,
+          });
+        }
+      }
+    } catch (err: any) {
+      setPreviewItem({
+        id: item.id,
+        filename: item.filename,
+        category: item.type,
+        canPreview: false,
+        error: err.message,
+      });
+    } finally {
+      setIsPreviewLoading(false);
     }
-    setDownloads((prev) => prev.filter((d) => d.id !== id));
-    showToast("Download removed from history");
+  };
+
+  const handleExecuteDelete = async (deleteFile: boolean) => {
+    if (!confirmDelete) return;
+    const { id } = confirmDelete;
+    const shell = typeof window !== "undefined" ? (window as any).browserShell : undefined;
+
+    try {
+      if (shell?.downloadsRemove && !id.startsWith("dl_")) {
+        await shell.downloadsRemove(id, deleteFile);
+      }
+      if (!id.startsWith("dl_")) {
+        await downloadsApi.delete(id, deleteFile);
+      }
+      setDownloads((prev) => prev.filter((d) => d.id !== id));
+      showToast(deleteFile ? "File and record deleted" : "Download removed from list");
+    } catch (err: any) {
+      showToast(`Error: ${err.message}`);
+    } finally {
+      setConfirmDelete(null);
+    }
   };
 
   const handlePauseResume = async (item: DownloadItem) => {
@@ -296,9 +413,56 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
     );
   };
 
-  const handleClearCompleted = () => {
-    setDownloads((prev) => prev.filter((d) => d.status !== "completed"));
-    showToast("Completed downloads cleared from list");
+  const handleRetry = async (item: DownloadItem) => {
+    try {
+      if (!item.id.startsWith("dl_")) {
+        await downloadsApi.retry(item.id);
+      }
+      if (item.url && onOpenInBrowser) {
+        onOpenInBrowser(item.url, item.filename);
+      }
+      showToast("Download restarted");
+      loadRealDownloads();
+    } catch (err: any) {
+      showToast(`Retry failed: ${err.message}`);
+    }
+  };
+
+  // AI Assistant trigger
+  const handleAskAi = async (actionPrompt: string, actionType?: "summarize" | "explain" | "group" | "find" | "cleanup" | "organize") => {
+    setIsAiLoading(true);
+    setAiQuery(actionPrompt);
+    setAiResponse(null);
+    setOrganizingSuccess(null);
+
+    try {
+      const res = await downloadsApi.askAi({
+        query: actionPrompt,
+        action: actionType || "summarize",
+        workspaceId: workspaceId || undefined,
+      });
+      setAiResponse(res);
+    } catch (err: any) {
+      showToast(`AI Assistant error: ${err.message}`);
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const handleApproveMoves = async () => {
+    if (!aiResponse || !aiResponse.proposedMoves || aiResponse.proposedMoves.length === 0) return;
+    setIsAiLoading(true);
+
+    try {
+      const res = await downloadsApi.executeOrganize(aiResponse.proposedMoves);
+      setOrganizingSuccess(`Successfully organized ${res.totalExecuted} files into designated folders.`);
+      showToast(`Organized ${res.totalExecuted} files.`);
+      loadRealDownloads();
+    } catch (err: any) {
+      showToast(`Organization error: ${err.message}`);
+    } finally {
+      setIsAiLoading(false);
+    }
   };
 
   // Filtered List
@@ -310,7 +474,8 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
       !q ||
       d.filename.toLowerCase().includes(q) ||
       (d.path && d.path.toLowerCase().includes(q)) ||
-      (d.url && d.url.toLowerCase().includes(q));
+      (d.url && d.url.toLowerCase().includes(q)) ||
+      (d.sourceDomain && d.sourceDomain.toLowerCase().includes(q));
     return matchStatus && matchType && matchSearch;
   });
 
@@ -318,10 +483,10 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
   const completedCount = downloads.filter((d) => d.status === "completed").length;
   const activeCount = downloads.filter((d) => d.status === "in_progress").length;
   const pausedCount = downloads.filter((d) => d.status === "paused").length;
-  const failedCount = downloads.filter((d) => d.status === "failed").length;
+  const failedCount = downloads.filter((d) => d.status === "failed" || d.status === "cancelled").length;
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#04040a] text-neutral-100 overflow-hidden select-none">
+    <div className="flex-1 flex flex-col h-full bg-[#050509] text-neutral-100 overflow-hidden select-none">
       {/* Toast Notification */}
       {toast && (
         <div className="fixed top-5 right-6 z-50 px-4 py-2.5 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-semibold shadow-2xl backdrop-blur-md animate-in slide-in-from-top-3 duration-200">
@@ -330,32 +495,32 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
       )}
 
       {/* Header Chrome */}
-      <div className="shrink-0 px-8 pt-7 pb-5 border-b border-white/[0.06] bg-[#05050c]">
+      <div className="shrink-0 px-8 pt-7 pb-5 border-b border-white/[0.06] bg-[#070712]">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/25 to-green-600/35 border border-emerald-500/35 flex items-center justify-center shadow-lg shadow-emerald-500/10">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/25 to-teal-600/35 border border-emerald-500/35 flex items-center justify-center shadow-lg shadow-emerald-500/10">
                 <Download className="w-6 h-6 text-emerald-400" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
-                  Downloads
+                  Downloads Manager
                   <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-mono font-medium">
                     {downloads.length} files
                   </span>
                 </h1>
                 <p className="text-xs text-neutral-400 mt-1 flex items-center gap-2">
-                  <span>Folder:</span>
+                  <span>Directory:</span>
                   <span
                     className="font-mono text-neutral-300 hover:text-emerald-300 cursor-pointer underline decoration-white/20 transition truncate max-w-md"
                     onClick={handleOpenFolder}
-                    title="Click to reveal Downloads directory"
+                    title="Click to reveal Downloads directory in Explorer"
                   >
                     {downloadsDirectory}
                   </span>
                   {activeCount > 0 && (
                     <span className="text-cyan-400 font-semibold animate-pulse">
-                      · {activeCount} active downloading
+                      · {activeCount} active stream running
                     </span>
                   )}
                 </p>
@@ -363,6 +528,20 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
             </div>
 
             <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setShowAiAssistant((prev) => !prev)}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition active:scale-95 shadow-sm border ${
+                  showAiAssistant
+                    ? "bg-violet-600 text-white border-violet-400 shadow-violet-500/30"
+                    : "bg-neutral-900/80 hover:bg-neutral-800 border-violet-500/30 text-violet-300 hover:text-white"
+                }`}
+                title="Toggle AI Downloads Assistant"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+                AI Assistant
+              </button>
+
               <button
                 type="button"
                 onClick={loadRealDownloads}
@@ -373,21 +552,11 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
                 <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-cyan-400" : ""}`} />
                 Scan
               </button>
-              {completedCount > 0 && (
-                <button
-                  type="button"
-                  onClick={handleClearCompleted}
-                  className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-neutral-900/80 hover:bg-neutral-800 border border-white/10 hover:border-white/20 text-neutral-400 hover:text-rose-300 text-xs font-medium transition active:scale-95"
-                  title="Clear completed downloads from view list"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  Clear Completed
-                </button>
-              )}
+
               <button
                 type="button"
                 onClick={handleOpenFolder}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white text-xs font-bold shadow-lg shadow-emerald-500/20 transition active:scale-95 cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-lg shadow-emerald-500/20 transition active:scale-95 cursor-pointer"
                 title={`Open folder: ${downloadsDirectory}`}
               >
                 <FolderOpen className="w-4 h-4" />
@@ -397,7 +566,7 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
           </div>
 
           {/* Telemetry Stats Cards */}
-          <div className="grid grid-cols-4 gap-3.5 mb-5">
+          <div className="grid grid-cols-5 gap-3.5 mb-5">
             {[
               {
                 label: "Total Files",
@@ -418,10 +587,18 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
               {
                 label: "Active Downloads",
                 value: activeCount,
-                sub: activeCount > 0 ? "Network streams running" : "Idle",
+                sub: activeCount > 0 ? "Streaming network data" : "Idle",
                 icon: TrendingDown,
                 color: "text-cyan-400",
                 border: "border-cyan-500/20",
+              },
+              {
+                label: "Failed / Cancelled",
+                value: failedCount,
+                sub: failedCount > 0 ? "Requires review" : "Clean state",
+                icon: AlertTriangle,
+                color: "text-amber-400",
+                border: "border-amber-500/20",
               },
               {
                 label: "Storage Used",
@@ -434,7 +611,7 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
             ].map(({ label, value, sub, icon: Icon, color, border }) => (
               <div
                 key={label}
-                className={`p-3.5 rounded-2xl bg-[#090912]/80 border ${border} flex items-center justify-between shadow-sm`}
+                className={`p-3.5 rounded-2xl bg-[#090914]/80 border ${border} flex items-center justify-between shadow-sm`}
               >
                 <div className="min-w-0">
                   <span className="text-[10px] uppercase font-mono tracking-wider text-neutral-500 block mb-1">
@@ -463,7 +640,7 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search downloads by filename, extension, or URL..."
+                placeholder="Search by filename, extension, or domain..."
                 className="w-full pl-9 pr-8 py-2 bg-neutral-900/70 border border-white/10 rounded-xl text-xs text-neutral-200 placeholder-neutral-500 outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 transition"
               />
               {searchQuery && (
@@ -539,6 +716,144 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
         </div>
       </div>
 
+      {/* AI Assistant Expandable Section */}
+      {showAiAssistant && (
+        <div className="shrink-0 px-8 py-5 bg-[#090918] border-b border-violet-500/20 animate-in slide-in-from-top-4 duration-200">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-violet-400" />
+                <span className="text-sm font-bold text-white">NEXUS AI Downloads & File Intelligence</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">
+                  Grounded in Authorized Records
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAiAssistant(false)}
+                className="text-neutral-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Quick Action Chips */}
+            <div className="flex items-center gap-2 mb-3 overflow-x-auto text-xs">
+              <button
+                type="button"
+                onClick={() => handleAskAi("Summarize the files in my downloads library and report their distribution.", "summarize")}
+                className="px-3 py-1.5 rounded-xl bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 border border-violet-500/30 transition font-medium shrink-0"
+              >
+                ✦ Summarize library
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAskAi("Group my downloads by project or domain and suggest organization.", "group")}
+                className="px-3 py-1.5 rounded-xl bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 border border-violet-500/30 transition font-medium shrink-0"
+              >
+                ✦ Group by project
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAskAi("Propose a safe folder organization plan for my files (e.g. Images, Documents, Code).", "organize")}
+                className="px-3 py-1.5 rounded-xl bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 border border-violet-500/30 transition font-medium shrink-0"
+              >
+                ✦ Propose folder organization
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAskAi("Identify any large or duplicate files that might be safe clean-up candidates.", "cleanup")}
+                className="px-3 py-1.5 rounded-xl bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 border border-violet-500/30 transition font-medium shrink-0"
+              >
+                ✦ Clean-up candidates
+              </button>
+            </div>
+
+            {/* Chat Input */}
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={aiQuery}
+                onChange={(e) => setAiQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && aiQuery.trim() && handleAskAi(aiQuery)}
+                placeholder="Ask AI anything about your downloaded files (e.g., 'Find all TypeScript files', 'What is the largest installer?')..."
+                className="flex-1 px-4 py-2 bg-neutral-950/80 border border-violet-500/30 rounded-xl text-xs text-neutral-100 placeholder-neutral-500 outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400/40"
+              />
+              <button
+                type="button"
+                disabled={isAiLoading || !aiQuery.trim()}
+                onClick={() => handleAskAi(aiQuery)}
+                className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-xs font-semibold flex items-center gap-2 transition"
+              >
+                {isAiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                Analyze
+              </button>
+            </div>
+
+            {/* AI Response Display */}
+            {aiResponse && (
+              <div className="mt-4 p-4 rounded-xl bg-[#0d0d20] border border-violet-500/30 space-y-3">
+                <div className="text-xs text-neutral-200 leading-relaxed whitespace-pre-wrap font-sans">
+                  {aiResponse.answer}
+                </div>
+
+                {/* Proposed Organization Approval Card */}
+                {aiResponse.proposedMoves && aiResponse.proposedMoves.length > 0 && (
+                  <div className="mt-3 p-3.5 rounded-xl bg-violet-950/40 border border-violet-500/40 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FolderCheck className="w-4 h-4 text-violet-400" />
+                        <span className="text-xs font-bold text-white">
+                          Proposed Organization Plan ({aiResponse.proposedMoves.length} moves)
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-amber-300 font-mono font-medium">
+                        Requires Approval
+                      </span>
+                    </div>
+
+                    <div className="max-h-36 overflow-y-auto space-y-1 pr-1">
+                      {aiResponse.proposedMoves.map((m, idx) => (
+                        <div key={idx} className="flex items-center justify-between text-[11px] p-1.5 rounded bg-black/40 border border-white/5 font-mono">
+                          <span className="text-neutral-300 truncate max-w-sm">{m.filename}</span>
+                          <span className="text-violet-300 font-bold shrink-0">→ {m.targetFolder}/</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-1 border-t border-white/5">
+                      <button
+                        type="button"
+                        onClick={() => setAiResponse(null)}
+                        className="px-3 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white text-xs transition"
+                      >
+                        Reject
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isAiLoading}
+                        onClick={handleApproveMoves}
+                        className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-500/20 transition flex items-center gap-1.5"
+                      >
+                        {isAiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckSquare className="w-3.5 h-3.5" />}
+                        Approve & Execute Organization
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {organizingSuccess && (
+                  <div className="p-3 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" />
+                    {organizingSuccess}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Main Downloads List View */}
       <div className="flex-1 overflow-y-auto px-8 py-6">
         <div className="max-w-6xl mx-auto space-y-2.5">
@@ -567,7 +882,7 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-neutral-900 border border-white/10 hover:border-white/20 text-neutral-200 text-xs font-semibold transition"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
-                  Rescan Local Storage
+                  Rescan Storage
                 </button>
                 <button
                   type="button"
@@ -590,13 +905,13 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
               return (
                 <div
                   key={d.id}
-                  className="group flex items-center gap-4 p-4 rounded-2xl bg-[#080811]/90 hover:bg-[#0d0d1b] border border-white/[0.05] hover:border-emerald-500/25 transition-all shadow-sm duration-150"
+                  className="group flex items-center gap-4 p-4 rounded-2xl bg-[#080814]/90 hover:bg-[#0d0d20] border border-white/[0.05] hover:border-emerald-500/25 transition-all shadow-sm duration-150"
                 >
                   {/* File Type or Image Thumbnail Preview */}
                   {isImage ? (
                     <div
                       className="w-12 h-12 rounded-xl bg-neutral-950 border border-white/10 flex items-center justify-center shrink-0 overflow-hidden cursor-pointer hover:opacity-90 transition"
-                      onClick={() => handleOpenFile(d)}
+                      onClick={() => handlePreview(d)}
                       title={`Preview ${d.filename}`}
                     >
                       <img
@@ -610,7 +925,9 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
                     </div>
                   ) : (
                     <div
-                      className={`w-12 h-12 rounded-xl border flex items-center justify-center shrink-0 ${typeColor}`}
+                      className={`w-12 h-12 rounded-xl border flex items-center justify-center shrink-0 cursor-pointer ${typeColor}`}
+                      onClick={() => handlePreview(d)}
+                      title={`Preview ${d.filename}`}
                     >
                       <Icon className="w-6 h-6" />
                     </div>
@@ -631,9 +948,14 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
                       )}
                     </div>
 
-                    <p className="text-[11px] text-neutral-400 font-mono truncate mb-1.5" title={d.path || d.url}>
-                      {d.path || d.url}
-                    </p>
+                    <div className="flex items-center gap-2 text-[11px] text-neutral-400 font-mono truncate mb-1">
+                      {d.sourceDomain && (
+                        <span className="text-cyan-400/80 font-semibold">{d.sourceDomain} ·</span>
+                      )}
+                      <span className="truncate" title={d.path || d.url}>
+                        {d.path || d.url}
+                      </span>
+                    </div>
 
                     {/* Progress Bar for active or paused downloads */}
                     {(d.status === "in_progress" || d.status === "paused") && (
@@ -687,8 +1009,18 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
                     </span>
                   </div>
 
-                  {/* Actions Group (Visible on Hover / Focus) */}
+                  {/* Actions Group */}
                   <div className="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition shrink-0 pl-2 border-l border-white/[0.05]">
+                    {/* Safe Preview */}
+                    <button
+                      type="button"
+                      onClick={() => handlePreview(d)}
+                      className="p-2 rounded-xl bg-neutral-900/60 hover:bg-neutral-800 border border-white/[0.06] hover:border-white/20 text-neutral-400 hover:text-white transition"
+                      title="Safe file preview"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </button>
+
                     {/* Pause / Resume */}
                     {(d.status === "in_progress" || d.status === "paused") && (
                       <button
@@ -705,9 +1037,9 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
                     {d.status === "failed" && (
                       <button
                         type="button"
-                        onClick={() => onOpenInBrowser?.(d.url, d.filename)}
+                        onClick={() => handleRetry(d)}
                         className="p-2 rounded-xl bg-neutral-900 border border-white/10 hover:border-white/25 text-neutral-300 hover:text-white transition"
-                        title="Retry download in browser"
+                        title="Retry download"
                       >
                         <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
                       </button>
@@ -733,12 +1065,12 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
                       <FolderOpen className="w-3.5 h-3.5" />
                     </button>
 
-                    {/* Remove from list */}
+                    {/* Delete Options Button */}
                     <button
                       type="button"
-                      onClick={() => handleDelete(d.id, d.path || d.filename)}
+                      onClick={() => setConfirmDelete({ id: d.id, filename: d.filename, path: d.path })}
                       className="p-2 rounded-xl bg-neutral-900/60 hover:bg-rose-500/20 border border-white/[0.06] hover:border-rose-500/30 text-neutral-400 hover:text-rose-400 transition"
-                      title="Remove from download history"
+                      title="Delete options"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -749,6 +1081,121 @@ export const NexusDownloadsView: React.FC<Props> = ({ onOpenInBrowser }) => {
           )}
         </div>
       </div>
+
+      {/* Safe File Preview Modal */}
+      {previewItem && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-150">
+          <div className="w-full max-w-4xl max-h-[85vh] bg-[#0c0c1b] border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#080812]">
+              <div className="flex items-center gap-3">
+                <FileCode className="w-5 h-5 text-emerald-400" />
+                <div>
+                  <h3 className="text-sm font-bold text-white">{previewItem.filename}</h3>
+                  <p className="text-[10px] text-neutral-400 font-mono">
+                    Category: {previewItem.category.toUpperCase()} · Safe Sandboxed Preview
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewItem(null)}
+                className="p-1 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto p-6 font-mono text-xs">
+              {isPreviewLoading ? (
+                <div className="py-20 text-center flex flex-col items-center gap-3 text-neutral-400">
+                  <Loader2 className="w-7 h-7 text-emerald-400 animate-spin" />
+                  <span>Loading safe preview...</span>
+                </div>
+              ) : previewItem.category === "image" && previewItem.imageData ? (
+                <div className="flex items-center justify-center min-h-[300px]">
+                  <img
+                    src={previewItem.imageData}
+                    alt={previewItem.filename}
+                    className="max-h-[60vh] max-w-full rounded-xl object-contain shadow-lg border border-white/10"
+                  />
+                </div>
+              ) : previewItem.content ? (
+                <pre className="p-4 rounded-xl bg-black/60 border border-white/5 text-neutral-200 overflow-x-auto whitespace-pre-wrap leading-relaxed">
+                  {previewItem.content}
+                </pre>
+              ) : (
+                <div className="py-16 text-center space-y-2 text-neutral-400">
+                  <Shield className="w-8 h-8 text-neutral-500 mx-auto" />
+                  <p className="text-sm font-semibold text-neutral-300">
+                    {previewItem.message || "Preview not available for this binary format."}
+                  </p>
+                  <p className="text-xs text-neutral-500">
+                    To prevent untrusted code execution, this file can only be opened through your operating system.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-3 border-t border-white/10 bg-[#080812] flex items-center justify-between text-xs">
+              <span className="text-neutral-500">
+                {previewItem.fileSize ? `Size: ${formatBytes(previewItem.fileSize)}` : ""}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPreviewItem(null)}
+                className="px-4 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white font-medium"
+              >
+                Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Explicit Deletion Confirmation Dialog */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-150">
+          <div className="w-full max-w-md bg-[#0e0e1c] border border-rose-500/30 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Remove Download</h3>
+                <p className="text-xs text-neutral-400 truncate max-w-xs">{confirmDelete.filename}</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-neutral-300 leading-relaxed">
+              How would you like to handle this item? You can remove it from your app download list, or permanently delete the file from your computer storage.
+            </p>
+
+            <div className="flex flex-col gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => handleExecuteDelete(false)}
+                className="w-full py-2.5 px-4 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-white/10 text-neutral-200 text-xs font-semibold transition"
+              >
+                Remove from History Only (Keep File on Disk)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleExecuteDelete(true)}
+                className="w-full py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition shadow-lg shadow-rose-600/30"
+              >
+                Permanently Delete Underlying File
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(null)}
+                className="w-full py-2 text-center text-neutral-400 hover:text-white text-xs font-medium"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

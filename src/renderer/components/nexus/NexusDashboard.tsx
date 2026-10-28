@@ -19,6 +19,9 @@ import {
   Shield,
   ChevronRight,
   Radio,
+  Code2,
+  Camera,
+  ShieldAlert,
 } from "lucide-react";
 import { nexusClient } from "../../lib/nexus/nexus-client";
 import { nexusWs } from "../../lib/nexus/nexus-ws";
@@ -194,9 +197,13 @@ export const NexusDashboard: React.FC<DashboardProps> = ({ onNavigate, workspace
 
   const quickActions = [
     { label: "Run Agent Goal", desc: "Autonomous multi-step browser planner", tab: "agent" as NexusTab, icon: Bot, color: "#fbbf24" },
-    { label: "Deep Research", desc: "Multi-source crawler with markdown report", tab: "research" as NexusTab, icon: Microscope, color: "#a78bfa" },
-    { label: "Trigger Workflow", desc: "Run scheduled pipelines and automations", tab: "workflows" as NexusTab, icon: Workflow, color: "#22d3ee" },
-    { label: "Memory Vault", desc: "Persistent knowledge and context storage", tab: "memory" as NexusTab, icon: Brain, color: "#fb7185" },
+    { label: "Visual Builder", desc: "Drag-and-drop automation graph studio", tab: "workflows" as NexusTab, icon: Workflow, color: "#22d3ee" },
+    { label: "Coding Workspace", desc: "Monaco IDE, Python 3.13 & Node sandbox", tab: "coding" as NexusTab, icon: Code2, color: "#10b981" },
+    { label: "Picture Studio", desc: "Web captures, vision telemetry & frames", tab: "picture-studio" as NexusTab, icon: Camera, color: "#f43f5e" },
+    { label: "Deep Research", desc: "Multi-source crawler with cited report", tab: "research" as NexusTab, icon: Microscope, color: "#a78bfa" },
+    { label: "Approvals Gate", desc: "Human-in-the-loop security & audit", tab: "approvals" as NexusTab, icon: ShieldAlert, color: "#eab308" },
+    { label: "Memory Vault", desc: "Persistent knowledge & context storage", tab: "memory" as NexusTab, icon: Brain, color: "#fb7185" },
+    { label: "Activity Timeline", desc: "Real-time durable audit logs", tab: "activity" as NexusTab, icon: Activity, color: "#818cf8" },
   ];
 
   return (

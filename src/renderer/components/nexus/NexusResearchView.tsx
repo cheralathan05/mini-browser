@@ -29,6 +29,9 @@ import {
   ChevronDown,
   ShieldCheck,
   Compass,
+  Edit2,
+  Download,
+  FileDown,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -70,6 +73,19 @@ export const NexusResearchView: React.FC<NexusResearchViewProps> = ({
   const [composerInquiry, setComposerInquiry] = useState("");
   const [selectedMode, setSelectedMode] = useState<ResearchMode>("standard");
   const [showModeConfig, setShowModeConfig] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  // Advanced Investigation Preferences
+  const [selectedSources, setSelectedSources] = useState<string[]>(["web", "paper", "github", "news", "docs"]);
+  const [selectedDateRange, setSelectedDateRange] = useState<string>("any");
+  const [exclusions, setExclusions] = useState<string>("");
+  const [outputFormat, setOutputFormat] = useState<string>("report");
+
+  // Report Search & Renaming State
+  const [reportSearch, setReportSearch] = useState<string>("");
+  const [renamingProjectId, setRenamingProjectId] = useState<string | null>(null);
+  const [renamingTitle, setRenamingTitle] = useState<string>("");
 
   // Workspace Pane State
   const [leftTab, setLeftTab] = useState<LeftTab>("sources");
@@ -218,7 +234,14 @@ export const NexusResearchView: React.FC<NexusResearchViewProps> = ({
   const handleStartInvestigation = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const query = composerInquiry.trim();
-    if (!query) return;
+    if (!query) {
+      setValidationError("Please enter an investigation question, comparison, or topic to research.");
+      return;
+    }
+    if (isSubmitting) return;
+
+    setValidationError(null);
+    setIsSubmitting(true);
 
     try {
       const title = query.length > 55 ? `${query.slice(0, 52)}...` : query;
@@ -227,6 +250,10 @@ export const NexusResearchView: React.FC<NexusResearchViewProps> = ({
         question: query,
         mode: selectedMode,
         workspaceId: workspaceId || undefined,
+        sourcePreferences: selectedSources,
+        dateRange: selectedDateRange,
+        exclusions: exclusions.trim() || undefined,
+        outputFormat,
       });
 
       setComposerInquiry("");
@@ -250,7 +277,49 @@ export const NexusResearchView: React.FC<NexusResearchViewProps> = ({
       loadProjects();
     } catch (err: any) {
       toast.error(`Failed to start investigation: ${err.message}`);
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  // Renaming Handlers
+  const handleStartRename = (proj: FullResearchProject, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setRenamingProjectId(proj.id);
+    setRenamingTitle(proj.name);
+  };
+
+  const handleSaveRename = async (id: string, e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!renamingTitle.trim()) return;
+    try {
+      const updated = await ResearchApiService.updateProject(id, { name: renamingTitle.trim() });
+      setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, name: updated.name } : p)));
+      if (selectedProject?.id === id) {
+        setSelectedProject((prev) => (prev ? { ...prev, name: updated.name } : null));
+      }
+      toast.success("Investigation renamed.");
+      setRenamingProjectId(null);
+    } catch (err: any) {
+      toast.error(`Failed to rename: ${err.message}`);
+    }
+  };
+
+  // Export Handlers
+  const handleExportMarkdown = (proj?: FullResearchProject, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const p = proj || selectedProject;
+    if (!p) return;
+    ResearchApiService.exportMarkdown(p);
+    toast.success("Markdown report downloaded.");
+  };
+
+  const handleExportJson = (proj?: FullResearchProject, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const p = proj || selectedProject;
+    if (!p) return;
+    ResearchApiService.exportJson(p);
+    toast.success("JSON research archive downloaded.");
   };
 
   // Workspace Controls
@@ -463,20 +532,24 @@ export const NexusResearchView: React.FC<NexusResearchViewProps> = ({
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
-                  <span>NEXUS RESEARCH</span>
+                  <span>NEXUS Deep Research</span>
                   <span className="text-xs font-mono font-semibold px-2.5 py-1 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/25">
                     Autonomous
                   </span>
                 </h1>
-                <p className="text-sm text-neutral-400 mt-0.5">Investigate anything — deeply, autonomously, with citations.</p>
+                <p className="text-sm text-neutral-400 mt-0.5">
+                  Autonomous investigation engine with empirical evidence mining & citation provenance.
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-neutral-900/60 border border-white/5">
-                <span className="text-sm text-neutral-300 font-medium">
-                  {projects.length} <span className="text-neutral-500">Investigations Saved</span>
-                </span>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-neutral-900/80 border border-white/5 text-xs font-mono text-cyan-300">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>AI Provider: Ollama · Multi-Channel Crawl</span>
+              </div>
+              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-neutral-900/60 border border-white/5 text-xs text-neutral-300 font-medium">
+                {projects.length} <span className="text-neutral-500">Investigations</span>
               </div>
             </div>
           </div>
@@ -486,14 +559,34 @@ export const NexusResearchView: React.FC<NexusResearchViewProps> = ({
             onSubmit={handleStartInvestigation}
             className="flex flex-col rounded-3xl bg-[#08080f] border border-white/8 shadow-2xl shadow-black/50 focus-within:border-cyan-500/40 transition-all duration-300 overflow-hidden"
           >
+            {/* Validation Error Banner */}
+            {validationError && (
+              <div className="px-6 py-2.5 bg-rose-500/15 border-b border-rose-500/25 flex items-center justify-between text-xs text-rose-300">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-400" />
+                  <span>{validationError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setValidationError(null)}
+                  className="text-rose-400 hover:text-white"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
             <div className="flex items-start gap-4 p-6">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-violet-600/20 border border-cyan-500/25 flex items-center justify-center shrink-0 mt-0.5">
-                <Compass className="w-5 h-5 text-cyan-400" />
+                <Compass className={`w-5 h-5 text-cyan-400 ${isSubmitting ? "animate-spin" : ""}`} />
               </div>
               <textarea
                 rows={4}
                 value={composerInquiry}
-                onChange={(e) => setComposerInquiry(e.target.value)}
+                onChange={(e) => {
+                  setComposerInquiry(e.target.value);
+                  if (validationError) setValidationError(null);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -503,6 +596,7 @@ export const NexusResearchView: React.FC<NexusResearchViewProps> = ({
                 placeholder="What should NEXUS investigate? Research a topic, compare technologies, investigate a company, analyze evidence, or answer a complex question..."
                 className="w-full bg-transparent text-base text-neutral-100 placeholder-neutral-600 outline-none resize-none leading-relaxed"
                 autoFocus
+                disabled={isSubmitting}
               />
             </div>
 
@@ -523,6 +617,13 @@ export const NexusResearchView: React.FC<NexusResearchViewProps> = ({
                             ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-sm"
                             : "text-neutral-400 hover:text-white hover:bg-white/5 border-transparent"
                         }`}
+                        title={
+                          mode === "quick"
+                            ? "6 Sources · Fast focused brief"
+                            : mode === "standard"
+                            ? "12 Sources · Cross-source analysis & caveats"
+                            : "20 Sources · Multi-stage gap analysis & follow-up searches"
+                        }
                       >
                         {mode}
                       </button>
@@ -533,41 +634,145 @@ export const NexusResearchView: React.FC<NexusResearchViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowModeConfig((p) => !p)}
-                  className="p-2 rounded-lg text-neutral-500 hover:text-neutral-300 hover:bg-white/5 transition"
-                  title="Configure depth and domains"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono transition border ${
+                    showModeConfig
+                      ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/30"
+                      : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5 border-transparent"
+                  }`}
+                  title="Configure search sources, date ranges, exclusions, and output formats"
                 >
-                  <SlidersHorizontal className="w-4 h-4" />
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                  <span>Preferences</span>
                 </button>
               </div>
 
               <button
                 type="submit"
-                disabled={!composerInquiry.trim()}
+                disabled={!composerInquiry.trim() || isSubmitting}
                 className="flex items-center gap-2.5 px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-violet-600 hover:from-cyan-500 hover:to-violet-500 text-white text-sm font-semibold shadow-lg shadow-cyan-500/25 disabled:opacity-30 disabled:pointer-events-none transition-all duration-200 active:scale-95"
               >
-                <Play className="w-4 h-4 fill-white" />
-                <span>Start Investigation</span>
+                {isSubmitting ? (
+                  <>
+                    <Compass className="w-4 h-4 animate-spin" />
+                    <span>Launching Investigation...</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4 fill-white" />
+                    <span>Start Investigation</span>
+                  </>
+                )}
               </button>
             </div>
 
-            {/* Optional Mode Config Drawer */}
+            {/* Expanded Advanced Investigation Preferences Drawer */}
             {showModeConfig && (
-              <div className="px-6 pb-5 pt-4 border-t border-white/5 grid grid-cols-3 gap-4 animate-in fade-in duration-150 bg-[#06060c]">
-                <div className="p-3.5 rounded-2xl bg-neutral-950 border border-white/5">
-                  <span className="text-[11px] text-neutral-500 block uppercase font-mono mb-1.5 tracking-wider">Target Corpus</span>
-                  <span className="text-sm text-white font-semibold">
-                    {selectedMode === "quick" ? "6 Sources (Quick)" : selectedMode === "standard" ? "12 Sources (Standard)" : "20 Sources (Deep Multi-Stage)"}
-                  </span>
+              <div className="px-6 pb-6 pt-5 border-t border-white/5 space-y-4 animate-in fade-in duration-200 bg-[#05050a]">
+                <div className="grid grid-cols-4 gap-4">
+                  {/* 1. Mode Description */}
+                  <div className="p-4 rounded-2xl bg-neutral-950 border border-white/5 space-y-1">
+                    <span className="text-[11px] text-neutral-500 block uppercase font-mono font-semibold tracking-wider">
+                      Mode Budget
+                    </span>
+                    <span className="text-sm text-cyan-300 font-semibold block capitalize">
+                      {selectedMode === "quick"
+                        ? "Quick (6 Sources)"
+                        : selectedMode === "standard"
+                        ? "Standard (12 Sources)"
+                        : "Deep (20 Sources + Follow-ups)"}
+                    </span>
+                    <p className="text-[11px] text-neutral-400">
+                      {selectedMode === "quick"
+                        ? "Focused brief with key citations."
+                        : selectedMode === "standard"
+                        ? "Structured cross-comparison & caveats."
+                        : "Multi-stage crawl, evidence gap detection, and comprehensive citations."}
+                    </p>
+                  </div>
+
+                  {/* 2. Date Range */}
+                  <div className="p-4 rounded-2xl bg-neutral-950 border border-white/5 space-y-1.5">
+                    <span className="text-[11px] text-neutral-500 block uppercase font-mono font-semibold tracking-wider">
+                      Date Range
+                    </span>
+                    <select
+                      value={selectedDateRange}
+                      onChange={(e) => setSelectedDateRange(e.target.value)}
+                      className="w-full bg-neutral-900 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-neutral-200 outline-none focus:border-cyan-500/50"
+                    >
+                      <option value="any">Any time</option>
+                      <option value="24h">Past 24 hours</option>
+                      <option value="week">Past week</option>
+                      <option value="month">Past month</option>
+                      <option value="year">Past year</option>
+                    </select>
+                  </div>
+
+                  {/* 3. Output Format */}
+                  <div className="p-4 rounded-2xl bg-neutral-950 border border-white/5 space-y-1.5">
+                    <span className="text-[11px] text-neutral-500 block uppercase font-mono font-semibold tracking-wider">
+                      Output Format
+                    </span>
+                    <select
+                      value={outputFormat}
+                      onChange={(e) => setOutputFormat(e.target.value)}
+                      className="w-full bg-neutral-900 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-neutral-200 outline-none focus:border-cyan-500/50"
+                    >
+                      <option value="report">Comprehensive Report</option>
+                      <option value="brief">Executive Brief</option>
+                      <option value="comparative">Comparative Matrix</option>
+                      <option value="technical">Technical Specification</option>
+                    </select>
+                  </div>
+
+                  {/* 4. Domain & Keyword Exclusions */}
+                  <div className="p-4 rounded-2xl bg-neutral-950 border border-white/5 space-y-1.5">
+                    <span className="text-[11px] text-neutral-500 block uppercase font-mono font-semibold tracking-wider">
+                      Exclusions (Optional)
+                    </span>
+                    <input
+                      type="text"
+                      value={exclusions}
+                      onChange={(e) => setExclusions(e.target.value)}
+                      placeholder="e.g. reddit.com, pinterest.com"
+                      className="w-full bg-neutral-900 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-neutral-200 placeholder-neutral-500 outline-none focus:border-cyan-500/50"
+                    />
+                  </div>
                 </div>
-                <div className="p-3.5 rounded-2xl bg-neutral-950 border border-white/5">
-                  <span className="text-[11px] text-neutral-500 block uppercase font-mono mb-1.5 tracking-wider">Domains Included</span>
-                  <span className="text-sm text-white font-semibold">Docs · ArXiv · GitHub · Web</span>
-                </div>
-                <div className="p-3.5 rounded-2xl bg-neutral-950 border border-white/5">
-                  <span className="text-[11px] text-neutral-500 block uppercase font-mono mb-1.5 tracking-wider">Time Budget</span>
-                  <span className="text-sm text-white font-semibold">
-                    {selectedMode === "quick" ? "45 Seconds" : selectedMode === "standard" ? "90 Seconds" : "3 Minutes"}
-                  </span>
+
+                {/* Source Channels Toggle Pills */}
+                <div className="pt-2 flex items-center gap-3">
+                  <span className="text-[11px] font-mono text-neutral-500 uppercase tracking-wider">Source Channels:</span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {[
+                      { id: "web", label: "Web Search" },
+                      { id: "paper", label: "ArXiv Papers" },
+                      { id: "github", label: "GitHub Code" },
+                      { id: "news", label: "Google News" },
+                      { id: "docs", label: "Technical Docs" },
+                    ].map((ch) => {
+                      const isActive = selectedSources.includes(ch.id);
+                      return (
+                        <button
+                          key={ch.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedSources((prev) =>
+                              isActive ? prev.filter((s) => s !== ch.id) : [...prev, ch.id]
+                            );
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-mono transition border ${
+                            isActive
+                              ? "bg-cyan-500/15 text-cyan-300 border-cyan-500/30"
+                              : "bg-neutral-950 text-neutral-500 border-white/5 hover:text-neutral-300"
+                          }`}
+                        >
+                          {isActive ? "✓ " : "+ "}
+                          {ch.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             )}
@@ -581,7 +786,7 @@ export const NexusResearchView: React.FC<NexusResearchViewProps> = ({
                   Recent Investigations
                 </span>
                 <div className="flex items-center gap-1 bg-neutral-900/80 rounded-xl p-1 border border-white/5">
-                  {["all", "in_progress", "completed"].map((tab) => (
+                  {["all", "in_progress", "completed", "failed", "cancelled"].map((tab) => (
                     <button
                       key={tab}
                       onClick={() => setStatusFilter(tab)}
@@ -620,11 +825,15 @@ export const NexusResearchView: React.FC<NexusResearchViewProps> = ({
                   const isFinished = proj.status === "completed";
                   const isOngoing = proj.status === "in_progress";
                   const isPaused = proj.status === "paused";
+                  const isFailed = proj.status === "failed";
+                  const isCancelled = proj.status === "cancelled";
+                  const isEditing = renamingProjectId === proj.id;
 
                   return (
                     <div
                       key={proj.id}
                       onClick={() => {
+                        if (isEditing) return;
                         setSelectedProject(proj);
                         setViewState("workspace");
                         loadProjectDetails(proj.id);
@@ -640,18 +849,55 @@ export const NexusResearchView: React.FC<NexusResearchViewProps> = ({
                               ? "bg-cyan-400 animate-ping"
                               : isPaused
                               ? "bg-amber-400 shadow-sm shadow-amber-400/50"
+                              : isFailed
+                              ? "bg-rose-500 shadow-sm shadow-rose-500/50"
                               : "bg-neutral-600"
                           }`}
+                          title={`Status: ${proj.status}`}
                         />
                         <div className="min-w-0">
-                          <h3 className="text-sm font-semibold text-neutral-200 group-hover:text-white truncate">
-                            {proj.name}
-                          </h3>
+                          {isEditing ? (
+                            <form
+                              onSubmit={(e) => handleSaveRename(proj.id, e)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="flex items-center gap-2"
+                            >
+                              <input
+                                type="text"
+                                value={renamingTitle}
+                                onChange={(e) => setRenamingTitle(e.target.value)}
+                                className="bg-neutral-900 border border-cyan-500/50 rounded-lg px-2.5 py-1 text-sm text-white outline-none"
+                                autoFocus
+                              />
+                              <button
+                                type="submit"
+                                className="p-1 rounded bg-cyan-600 text-white hover:bg-cyan-500"
+                                title="Save"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setRenamingProjectId(null);
+                                }}
+                                className="p-1 rounded text-neutral-400 hover:text-white"
+                                title="Cancel"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </form>
+                          ) : (
+                            <h3 className="text-sm font-semibold text-neutral-200 group-hover:text-white truncate">
+                              {proj.name}
+                            </h3>
+                          )}
                           <p className="text-xs text-neutral-500 truncate mt-0.5">{proj.question}</p>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-5 shrink-0 text-xs text-neutral-500 font-mono">
+                      <div className="flex items-center gap-4 shrink-0 text-xs text-neutral-500 font-mono">
                         <span className="px-2.5 py-1 rounded-lg bg-neutral-900 border border-white/5 capitalize text-neutral-400">
                           {proj.mode}
                         </span>
@@ -666,14 +912,61 @@ export const NexusResearchView: React.FC<NexusResearchViewProps> = ({
                         <span className="text-neutral-600">
                           {new Date(proj.createdAt).toLocaleDateString()}
                         </span>
-                        <button
-                          type="button"
-                          onClick={(e) => handleDelete(proj.id, e)}
-                          className="p-1.5 text-neutral-600 hover:text-rose-400 hover:bg-rose-400/10 rounded-lg transition"
-                          title="Delete"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1 border-l border-white/5 pl-3">
+                          <button
+                            type="button"
+                            onClick={(e) => handleStartRename(proj, e)}
+                            className="p-1.5 text-neutral-500 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition"
+                            title="Rename Investigation"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => handleExportMarkdown(proj, e)}
+                            className="p-1.5 text-neutral-500 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition"
+                            title="Export Markdown"
+                          >
+                            <FileDown className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => handleExportJson(proj, e)}
+                            className="p-1.5 text-neutral-500 hover:text-violet-400 hover:bg-violet-500/10 rounded-lg transition"
+                            title="Export JSON"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                          </button>
+
+                          {(isFailed || isCancelled) && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedProject(proj);
+                                handleRerun();
+                              }}
+                              className="p-1.5 text-neutral-500 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition"
+                              title="Retry Investigation"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={(e) => handleDelete(proj.id, e)}
+                            className="p-1.5 text-neutral-500 hover:text-rose-400 hover:bg-rose-400/10 rounded-lg transition"
+                            title="Delete"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+
                         <ChevronRight className="w-4 h-4 text-neutral-600 group-hover:text-neutral-300 transition-transform group-hover:translate-x-0.5" />
                       </div>
                     </div>
@@ -1025,13 +1318,42 @@ export const NexusResearchView: React.FC<NexusResearchViewProps> = ({
             {/* Actions for active report */}
             {centerTab === "report" && selectedProject?.finalReport && (
               <div className="flex items-center gap-2">
+                <div className="relative w-44">
+                  <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={reportSearch}
+                    onChange={(e) => setReportSearch(e.target.value)}
+                    placeholder="Find in report..."
+                    className="w-full pl-8 pr-2.5 py-1 bg-neutral-900 border border-white/10 rounded-lg text-xs text-neutral-200 placeholder-neutral-500 outline-none focus:border-cyan-500/50"
+                  />
+                </div>
                 <button
                   type="button"
                   onClick={handleCopyReport}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 text-xs border border-white/5 transition"
+                  title="Copy Report Markdown"
                 >
                   {copiedReport ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                  <span>{copiedReport ? "Copied" : "Copy Markdown"}</span>
+                  <span>{copiedReport ? "Copied" : "Copy"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExportMarkdown(selectedProject)}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 text-xs border border-white/5 transition"
+                  title="Export Markdown File"
+                >
+                  <FileDown className="w-3 h-3 text-emerald-400" />
+                  <span>.MD</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExportJson(selectedProject)}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 text-xs border border-white/5 transition"
+                  title="Export JSON Archive"
+                >
+                  <Download className="w-3 h-3 text-violet-400" />
+                  <span>.JSON</span>
                 </button>
                 <button
                   type="button"
@@ -1043,9 +1365,10 @@ export const NexusResearchView: React.FC<NexusResearchViewProps> = ({
                     )
                   }
                   className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-violet-600/20 hover:bg-violet-600 text-violet-300 hover:text-white text-xs border border-violet-500/30 transition"
+                  title="Persist to PostgreSQL Memory"
                 >
                   <Bookmark className="w-3 h-3" />
-                  <span>Save to Memory</span>
+                  <span>Save</span>
                 </button>
               </div>
             )}
@@ -1172,6 +1495,38 @@ export const NexusResearchView: React.FC<NexusResearchViewProps> = ({
                       >
                         {selectedProject.finalReport}
                       </ReactMarkdown>
+                    </div>
+
+                    {/* Suggested Next Questions & Platform Actions */}
+                    <div className="p-6 rounded-3xl bg-[#08080d] border border-white/5 space-y-3 shadow-xl">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-2">
+                          <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+                          <span>Suggested Next Investigation Trajectories</span>
+                        </span>
+                        <span className="text-[11px] font-mono text-neutral-500">Autonomous Follow-ups</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2.5">
+                        {[
+                          "Benchmark real-world performance under concurrent loads",
+                          "Investigate security vulnerabilities & edge-case failure modes",
+                          "Compare architectural trade-offs with leading alternatives",
+                          "Deploy an autonomous coding agent to implement this architecture",
+                        ].map((promptText, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => {
+                              handleAskCopilot(promptText);
+                              setIsRightCollapsed(false);
+                            }}
+                            className="p-3 rounded-xl bg-neutral-900/60 hover:bg-violet-600/15 border border-white/5 hover:border-violet-500/30 text-left text-xs text-neutral-300 hover:text-white transition flex items-center justify-between group"
+                          >
+                            <span className="truncate pr-2">{promptText}</span>
+                            <ChevronRight className="w-3.5 h-3.5 text-neutral-600 group-hover:text-violet-400 shrink-0" />
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ) : (

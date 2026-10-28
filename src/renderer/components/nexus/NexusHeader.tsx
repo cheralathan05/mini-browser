@@ -20,11 +20,15 @@ import {
   Plus,
   Edit2,
   Trash2,
+  Code2,
+  Camera,
 } from "lucide-react";
 import { NexusWorkspaceModal } from "./NexusWorkspaceModal";
 
 export type NexusTab =
   | "browser"
+  | "coding"
+  | "picture-studio"
   | "dashboard"
   | "agent"
   | "research"
@@ -141,10 +145,12 @@ export const NexusHeader: React.FC<NexusHeaderProps> = ({
 
   const tabs = [
     { id: "browser", label: "Browser", icon: Globe, shortcut: "1" },
+    { id: "coding", label: "Coding Agent", icon: Code2, shortcut: "C" },
+    { id: "picture-studio", label: "Picture Studio", icon: Camera, shortcut: "P" },
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, shortcut: "2" },
     { id: "agent", label: "AI Agent", icon: Bot, shortcut: "3" },
     { id: "research", label: "Research", icon: Microscope, shortcut: "4" },
-    { id: "workflows", label: "Workflows", icon: Workflow, shortcut: "5" },
+    { id: "workflows", label: "Automation", icon: Workflow, shortcut: "5" },
     { id: "memory", label: "Memory", icon: Brain, shortcut: "6" },
     { id: "skills", label: "Skills", icon: Sparkles, shortcut: "7" },
     {
